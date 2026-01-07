@@ -1,4 +1,4 @@
-// src/Login.jsx
+/* eslint-disable react/react-in-jsx-scope */
 import { useContext, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { AuthContext } from './context/AuthContext';
@@ -10,11 +10,12 @@ function Login() {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
-  const onSubmit = (data) => {
-    if (login(data.username, data.password)) {
+  const onSubmit = async (data) => {
+    try {
+      await login(data.email, data.password);
       navigate('/admin');
-    } else {
-      setError('Invalid credentials - try admin / password123');
+    } catch (err) {
+      setError(err.message || 'Login failed');
     }
   };
 
@@ -22,8 +23,8 @@ function Login() {
     <div style={{ maxWidth: '400px', margin: '50px auto', padding: '20px' }}>
       <h2>Admin Login</h2>
       <form onSubmit={handleSubmit(onSubmit)}>
-        <input {...register('username')} placeholder="Username" required style={{ display: 'block', margin: '10px 0', padding: '8px' }} />
-        <input {...register('password')} type="password" placeholder="Password" required style={{ display: 'block', margin: '10px 0', padding: '8px' }} />
+        <input {...register('email')} type="email" placeholder="Email" required style={{ display: 'block', margin: '10px 0', padding: '8px', width: '100%' }} />
+        <input {...register('password')} type="password" placeholder="Password" required style={{ display: 'block', margin: '10px 0', padding: '8px', width: '100%' }} />
         <button type="submit" style={{ padding: '10px 20px' }}>Login</button>
       </form>
       {error && <p style={{ color: 'red' }}>{error}</p>}

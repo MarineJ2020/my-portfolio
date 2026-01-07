@@ -1,136 +1,132 @@
-// src/AdminPanel.jsx
-import { useState } from 'react';
-import { positions, skills, saveData } from './data';
+/* eslint-disable react/react-in-jsx-scope */
+import { useContext, useState } from 'react';
+import { AuthContext } from './context/AuthContext';
+import { usePositions } from './hooks/usePositions';
+import { useSkills } from './hooks/useSkills';
+import { storage } from './firebase';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 function AdminPanel() {
-  const [posList, setPosList] = useState(positions);
-  const [skillList, setSkillList] = useState(skills);
+  const { user } = useContext(AuthContext);
+  const { positions, addPosition, updatePosition, deletePosition } = usePositions();
+  const {
+    skills,
+    addSkill,
+    updateSkill,
+    deleteSkill,
+    addMediaToSkill,
+    assignSkillToPosition,
+    removeSkillFromPosition,
+  } = useSkills();
+
+  // Position form state
   const [newPosName, setNewPosName] = useState('');
+  const [editingPosId, setEditingPosId] = useState(null);
+
+  // Skill form state
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillDesc, setNewSkillDesc] = useState('');
-  const [newMediaType, setNewMediaType] = useState('image');
-  const [newMediaUrl, setNewMediaUrl] = useState('');
-  const [editingPosId, setEditingPosId] = useState(null);
   const [editingSkillId, setEditingSkillId] = useState(null);
+
+  // Media upload state
+  const [mediaFile, setMediaFile] = useState(null);
+  const [mediaType, setMediaType] = useState('image');
+  const [targetSkillId, setTargetSkillId] = useState('');
+
+  // Assignment state
   const [assignPosId, setAssignPosId] = useState('');
   const [assignSkillId, setAssignSkillId] = useState('');
 
-  const saveAndUpdate = (newPos, newSkills) => {
-    saveData('positions', newPos);
-    saveData('skills', newSkills);
-    setPosList(newPos);
-    setSkillList(newSkills);
-  };
-
-  // Positions CRUD
-  const addPosition = () => {
-    if (!newPosName) return;
-    const newId = Date.now().toString();
-    const newPos = [...posList, { id: newId, name: newPosName, skillIds: [] }];
-    saveAndUpdate(newPos, skillList);
+  const handleAddOrUpdatePosition = async () => {
+    if (!newPosName.trim()) return;
+    if (editingPosId) {
+      await updatePosition(editingPosId, { name: newPosName });
+      setEditingPosId(null);
+    } else {
+      await addPosition(newPosName);
+    }
     setNewPosName('');
   };
 
-  const deletePosition = (id) => {
-    const newPos = posList.filter(p => p.id !== id);
-    saveAndUpdate(newPos, skillList);
-  };
-
-  const startEditPos = (pos) => {
-    setEditingPosId(pos.id);
+  const handleEditPosition = (pos) => {
     setNewPosName(pos.name);
+    setEditingPosId(pos.id);
   };
 
-  const updatePosition = () => {
-    const newPos = posList.map(p => p.id === editingPosId ? { ...p, name: newPosName } : p);
-    saveAndUpdate(newPos, skillList);
-    setEditingPosId(null);
-    setNewPosName('');
+  const handleAddOrUpdateSkill = async () => {
+    if (!newSkillName.trim()) return;
+    const skillData = { name: newSkillName, description: newSkillDesc };
+    if (editingSkillId) {
+      await updateSkill(editingSkillId, skillData);
+      setEditingSkillId(null);
+    } else {
+      await addSkill(skillData);
+    }
+    setNewSkillName('');
+    setNewSkillDesc('');
   };
 
-  // Skills CRUD (similar, plus media)
-  const addSkill = () => {
-    if (!newSkillName) return;
-    const newId = 's' + Date.now();
-    const newSkills = [...skillList, { id: newId, name: newSkillName, media: [], description: newSkillDesc }];
-    saveAndUpdate(posList, newSkills);
-    setNewSkillName(''); setNewSkillDesc('');
-  };
-
-  const deleteSkill = (id) => {
-    const newSkills = skillList.filter(s => s.id !== id);
-    const newPos = posList.map(p => ({ ...p, skillIds: p.skillIds.filter(sid => sid !== id) }));
-    saveAndUpdate(newPos, newSkills);
-  };
-
-  const startEditSkill = (skill) => {
-    setEditingSkillId(skill.id);
+  const handleEditSkill = (skill) => {
     setNewSkillName(skill.name);
-    setNewSkillDesc(skill.description);
+    setNewSkillDesc(skill.description || '');
+    setEditingSkillId(skill.id);
   };
 
-  const updateSkill = () => {
-    const newSkills = skillList.map(s => s.id === editingSkillId ? { ...s, name: newSkillName, description: newSkillDesc } : s);
-    saveAndUpdate(posList, newSkills);
-    setEditingSkillId(null);
-    setNewSkillName(''); setNewSkillDesc('');
+  const handleUploadMedia = async () => {
+    if (!mediaFile || !targetSkillId) return;
+
+    const storageRef = ref(storage, `media/${Date.now()}_${mediaFile.name}`);
+    await uploadBytes(storageRef, mediaFile);
+    const url = await getDownloadURL(storageRef);
+
+    await addMediaToSkill(targetSkillId, { type: mediaType, url });
+    setMediaFile(null);
+    setTargetSkillId('');
   };
 
-  const addMediaToSkill = (skillId) => {
-    if (!newMediaUrl) return;
-    const newSkills = skillList.map(s => {
-      if (s.id === skillId) {
-        return { ...s, media: [...s.media, { type: newMediaType, url: newMediaUrl }] };
-      }
-      return s;
-    });
-    saveAndUpdate(posList, newSkills);
-    setNewMediaUrl('');
+  const handleAssignSkill = async () => {
+    if (assignPosId && assignSkillId) {
+      await assignSkillToPosition(assignPosId, assignSkillId);
+      setAssignPosId('');
+      setAssignSkillId('');
+    }
   };
 
-  // Assign skill to position
-  const assignSkill = () => {
-    if (!assignPosId || !assignSkillId) return;
-    const newPos = posList.map(p => {
-      if (p.id === assignPosId && !p.skillIds.includes(assignSkillId)) {
-        return { ...p, skillIds: [...p.skillIds, assignSkillId] };
-      }
-      return p;
-    });
-    saveAndUpdate(newPos, skillList);
-  };
-
-  const removeSkillFromPos = (posId, skillId) => {
-    const newPos = posList.map(p => {
-      if (p.id === posId) {
-        return { ...p, skillIds: p.skillIds.filter(sid => sid !== skillId) };
-      }
-      return p;
-    });
-    saveAndUpdate(newPos, skillList);
-  };
+  if (!user) return <p>Access denied. Please log in.</p>;
 
   return (
-    <div className="admin-panel">
+    <div className="admin-panel" style={{ padding: '20px', fontFamily: 'sans-serif' }}>
       <h2>Admin Panel</h2>
 
-      {/* Manage Positions */}
-      <section>
-        <h3>Positions</h3>
-        <input value={newPosName} onChange={e => setNewPosName(e.target.value)} placeholder="New Position Name" />
-        <button onClick={editingPosId ? updatePosition : addPosition}>{editingPosId ? 'Update' : 'Add'}</button>
+      {/* Positions Section */}
+      <section style={{ marginBottom: '40px' }}>
+        <h3>Manage Positions</h3>
+        <div>
+          <input
+            value={newPosName}
+            onChange={(e) => setNewPosName(e.target.value)}
+            placeholder="Position name"
+          />
+          <button onClick={handleAddOrUpdatePosition}>
+            {editingPosId ? 'Update' : 'Add'} Position
+          </button>
+        </div>
         <ul>
-          {posList.map(pos => (
+          {positions.map((pos) => (
             <li key={pos.id}>
               {pos.name}
-              <button onClick={() => startEditPos(pos)}>Edit</button>
+              <button onClick={() => handleEditPosition(pos)}>Edit</button>
               <button onClick={() => deletePosition(pos.id)}>Delete</button>
-              {/* Show assigned skills */}
               <ul>
-                {pos.skillIds.map(sid => {
-                  const skill = skillList.find(s => s.id === sid);
-                  return skill ? (
-                    <li key={sid}>{skill.name} <button onClick={() => removeSkillFromPos(pos.id, sid)}>Remove</button></li>
+                {pos.skillIds?.map((sid) => {
+                  const sk = skills.find((s) => s.id === sid);
+                  return sk ? (
+                    <li key={sid}>
+                      {sk.name}{' '}
+                      <button onClick={() => removeSkillFromPosition(pos.id, sid)}>
+                        Remove
+                      </button>
+                    </li>
                   ) : null;
                 })}
               </ul>
@@ -139,30 +135,60 @@ function AdminPanel() {
         </ul>
       </section>
 
-      {/* Manage Skills */}
-      <section>
-        <h3>Skills</h3>
-        <input value={newSkillName} onChange={e => setNewSkillName(e.target.value)} placeholder="New Skill Name" />
-        <textarea value={newSkillDesc} onChange={e => setNewSkillDesc(e.target.value)} placeholder="Description" />
-        <button onClick={editingSkillId ? updateSkill : addSkill}>{editingSkillId ? 'Update' : 'Add'}</button>
+      {/* Skills Section */}
+      <section style={{ marginBottom: '40px' }}>
+        <h3>Manage Skills</h3>
+        <div>
+          <input
+            value={newSkillName}
+            onChange={(e) => setNewSkillName(e.target.value)}
+            placeholder="Skill name"
+          />
+          <textarea
+            value={newSkillDesc}
+            onChange={(e) => setNewSkillDesc(e.target.value)}
+            placeholder="Description"
+          />
+          <button onClick={handleAddOrUpdateSkill}>
+            {editingSkillId ? 'Update' : 'Add'} Skill
+          </button>
+        </div>
         <ul>
-          {skillList.map(skill => (
+          {skills.map((skill) => (
             <li key={skill.id}>
-              {skill.name} - {skill.description}
-              <button onClick={() => startEditSkill(skill)}>Edit</button>
+              <strong>{skill.name}</strong> - {skill.description || 'No description'}
+              <button onClick={() => handleEditSkill(skill)}>Edit</button>
               <button onClick={() => deleteSkill(skill.id)}>Delete</button>
-              {/* Add Media */}
-              <div>
-                <select value={newMediaType} onChange={e => setNewMediaType(e.target.value)}>
+
+              {/* Media Upload for this skill */}
+              <div style={{ marginTop: '10px' }}>
+                <select onChange={(e) => setMediaType(e.target.value)} value={mediaType}>
                   <option value="image">Image</option>
                   <option value="video">Video</option>
                 </select>
-                <input value={newMediaUrl} onChange={e => setNewMediaUrl(e.target.value)} placeholder="Media URL" />
-                <button onClick={() => addMediaToSkill(skill.id)}>Add Media</button>
+                <input
+                  type="file"
+                  accept="image/*,video/*"
+                  onChange={(e) => setMediaFile(e.target.files[0])}
+                />
+                <button
+                  onClick={() => {
+                    setTargetSkillId(skill.id);
+                    handleUploadMedia();
+                  }}
+                  disabled={!mediaFile}
+                >
+                  Upload to this skill
+                </button>
               </div>
-              {/* Show media */}
+
+              {/* Existing media */}
               <ul>
-                {skill.media.map((m, idx) => <li key={idx}>{m.type}: {m.url}</li>)}
+                {skill.media?.map((m, idx) => (
+                  <li key={idx}>
+                    {m.type}: {m.url}
+                  </li>
+                ))}
               </ul>
             </li>
           ))}
@@ -172,15 +198,25 @@ function AdminPanel() {
       {/* Assign Skills to Positions */}
       <section>
         <h3>Assign Skill to Position</h3>
-        <select value={assignPosId} onChange={e => setAssignPosId(e.target.value)}>
+        <select value={assignPosId} onChange={(e) => setAssignPosId(e.target.value)}>
           <option value="">Select Position</option>
-          {posList.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          {positions.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
         </select>
-        <select value={assignSkillId} onChange={e => setAssignSkillId(e.target.value)}>
+        <select value={assignSkillId} onChange={(e) => setAssignSkillId(e.target.value)}>
           <option value="">Select Skill</option>
-          {skillList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+          {skills.map((s) => (
+            <option key={s.id} value={s.id}>
+              {s.name}
+            </option>
+          ))}
         </select>
-        <button onClick={assignSkill}>Assign</button>
+        <button onClick={handleAssignSkill} disabled={!assignPosId || !assignSkillId}>
+          Assign
+        </button>
       </section>
     </div>
   );

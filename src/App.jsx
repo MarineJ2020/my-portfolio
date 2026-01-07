@@ -1,26 +1,30 @@
-// src/App.jsx
+/* eslint-disable react/react-in-jsx-scope */
 import { Routes, Route, Link, Navigate } from 'react-router-dom';
 import { useContext } from 'react';
-import { AuthContext } from './context/AuthContext.jsx'; // 👈 Don't forget .jsx if needed (Vite sometimes requires it)
+import { AuthContext } from './context/AuthContext';
 import MainPage from './MainPage';
 import AdminPanel from './AdminPanel';
 import Login from './Login';
 
 function App() {
-  // Destructure everything you need in ONE place — pro best practice
-  const { isAuthenticated, logout } = useContext(AuthContext);
+  const { user, loading, logout } = useContext(AuthContext);
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>;
+  }
 
   return (
     <div className="app">
       <nav>
         <Link to="/">Home</Link>
-        {isAuthenticated ? (
+        {user ? (
           <>
             {' | '}
             <Link to="/admin">Admin</Link>
             {' | '}
-            {/* Now using the destructured logout — clean & efficient */}
-            <button onClick={logout}>Logout</button>
+            <button onClick={logout} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>
+              Logout
+            </button>
           </>
         ) : (
           <>
@@ -33,20 +37,10 @@ function App() {
       <Routes>
         <Route path="/" element={<MainPage />} />
         <Route path="/login" element={<Login />} />
-
-        {/* Protected Admin Route */}
         <Route
           path="/admin"
-          element={
-            isAuthenticated ? (
-              <AdminPanel />
-            ) : (
-              <Navigate to="/login" replace />
-            )
-          }
+          element={user ? <AdminPanel /> : <Navigate to="/login" replace />}
         />
-
-        {/* Optional: Catch-all for 404 */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

@@ -1,16 +1,49 @@
-# React + Vite
+# My Portfolio (2026)
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern, full-stack personal portfolio built with React + Vite + Firebase. Features position-based skill showcase with media popups, secure admin panel, real-time data sync, and cloud file uploads.
 
-Currently, two official plugins are available:
+**Live Site**: https://your-project-id.web.app  
+**Admin Login**: Use the email/password you created in Firebase Auth (admin-only access)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Tech Stack
 
-## React Compiler
+- **Frontend**: React 18 + Vite
+- **Styling**: Inline/Tailwind-ready (future upgrade planned)
+- **Routing**: React Router DOM
+- **Authentication**: Firebase Authentication (Email/Password)
+- **Database**: Firebase Firestore (real-time sync)
+- **File Storage**: Firebase Storage (images/videos)
+- **Hosting**: Firebase Hosting
+- **State Management**: React hooks + Firebase real-time listeners
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Features
 
-## Expanding the ESLint configuration
+- Responsive main page with profile photo and name
+- Position tabs with auto-grid skill cards
+- Clickable skill cards → modal popup with media grid (images/videos) and description
+- Protected admin panel (/admin) for CRUD:
+  - Manage positions
+  - Manage skills (name, description, media)
+  - Assign skills to positions
+  - Real file uploads to Firebase Storage
+- Secure auth: Only authenticated admin can edit data
+- Production-ready: Fully deployed on Firebase with public reads
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Project Structure
+src/
+├── components/           # Reusable components (future)
+├── context/
+│   └── AuthContext.jsx   # Firebase Auth state management
+├── firebase.js           # Firebase app initialization & exports (auth, db, storage)
+├── hooks/
+│   ├── usePositions.js   # Firestore hooks for positions
+│   └── useSkills.js      # Firestore hooks for skills + media assignment
+├── App.jsx               # Routing & nav (protected routes)
+├── main.jsx              # Entry point (ReactDOM + providers)
+├── MainPage.jsx          # Public portfolio view
+├── AdminPanel.jsx        # Admin CRUD interface with uploads
+├── Login.jsx             # Login form
+└── index.html            # Vite template
+
+
+
