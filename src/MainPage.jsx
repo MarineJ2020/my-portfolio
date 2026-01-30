@@ -1,42 +1,68 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
+import { useSettings } from './hooks/useSettings'; // Import the settings hook
 
 function MainPage() {
-  const { positions } = usePositions(); //
-  const { skills } = useSkills(); //
+  const { positions } = usePositions();
+  const { skills } = useSkills();
+  const { settings } = useSettings(); // Get live settings from Firestore
 
-  // Default to first position if available, otherwise empty
-  const [activePositionId, setActivePositionId] = useState(positions[0]?.id || '');
+  const [activePositionId, setActivePositionId] = useState('');
   const [selectedSkill, setSelectedSkill] = useState(null);
 
-  // If activePositionId is empty but positions exist, set it (fixes initial load async issue)
-  if (!activePositionId && positions.length > 0) {
-    setActivePositionId(positions[0].id);
-  }
+  // Sync active position and apply background color
+  useEffect(() => {
+    if (!activePositionId && positions.length > 0) {
+      setActivePositionId(positions[0].id);
+    }
+    
+    // Apply the background color from dashboard to the body
+    if (settings?.bgColor) {
+      document.body.style.backgroundColor = settings.bgColor;
+    }
+  }, [positions, activePositionId, settings?.bgColor]);
 
   const activePosition = positions.find(p => p.id === activePositionId);
   const activeSkills = activePosition
     ? skills.filter(s => activePosition.skillIds?.includes(s.id))
     : [];
 
+  // Fallback values if settings haven't loaded yet
+  const displayName = settings?.name || 'Your Name';
+  const footerText = settings?.footerText || `© ${new Date().getFullYear()} Portfolio`;
+
   return (
     <div className="main-page">
       {/* Hero Section */}
       <section className="container" style={{ textAlign: 'center', padding: '6rem 1rem 4rem' }}>
         <div style={{ marginBottom: '2rem' }}>
-          {/* Placeholder for Profile - Replace src with real URL via Admin later */}
-          <div style={{ 
-            width: '120px', height: '120px', borderRadius: '50%', 
-            background: 'linear-gradient(45deg, var(--primary), #ec4899)', 
-            margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: '3rem', fontWeight: 'bold'
-          }}>
-            YN
-          </div>
+          {settings?.profilePic ? (
+            <img 
+              src={settings.profilePic} 
+              alt={displayName} 
+              style={{ 
+                width: '120px', 
+                height: '120px', 
+                borderRadius: '50%', 
+                objectFit: 'cover', 
+                border: '3px solid var(--primary)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+              }} 
+            />
+          ) : (
+            <div style={{ 
+              width: '120px', height: '120px', borderRadius: '50%', 
+              background: 'linear-gradient(45deg, var(--primary), #ec4899)', 
+              margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '3rem', fontWeight: 'bold'
+            }}>
+              {displayName.charAt(0)}
+            </div>
+          )}
         </div>
-        <h1>Creative Developer & <br /> Tech Enthusiast</h1>
+        <h1>{displayName}</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', margin: '1rem auto' }}>
           I build accessible, pixel-perfect, and performant web experiences. 
           Explore my technical expertise by role below.
@@ -71,7 +97,7 @@ function MainPage() {
                   {skill.description ? skill.description.substring(0, 60) + '...' : 'View details'}
                 </p>
                 <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.6 }}>
-                   Click to view media
+                    Click to view media
                 </div>
               </div>
             ))
@@ -126,6 +152,17 @@ function MainPage() {
           </div>
         </div>
       )}
+
+      {/* Footer Section */}
+      <footer style={{ 
+        marginTop: '6rem', 
+        padding: '3rem 1rem', 
+        textAlign: 'center', 
+        borderTop: '1px solid var(--glass-border)',
+        color: 'var(--text-muted)'
+      }}>
+        <p>{footerText}</p>
+      </footer>
     </div>
   );
 }

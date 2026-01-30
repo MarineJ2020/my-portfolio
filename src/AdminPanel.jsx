@@ -1,14 +1,16 @@
+
 /* eslint-disable react/react-in-jsx-scope */
-import { useContext, useState } from 'react';
+import { useContext, useState, useEffect } from 'react';
 import { AuthContext } from './context/AuthContext';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
+import { useSettings } from './hooks/useSettings'; // You will need to create this hook
 import { storage } from './firebase';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 function AdminPanel() {
-  const { user } = useContext(AuthContext); //
-  const { positions, addPosition, updatePosition, deletePosition } = usePositions(); //
+  const { user } = useContext(AuthContext);
+  const { positions, addPosition, updatePosition, deletePosition } = usePositions();
   const {
     skills,
     addSkill,
@@ -17,9 +19,12 @@ function AdminPanel() {
     addMediaToSkill,
     assignSkillToPosition,
     removeSkillFromPosition,
-  } = useSkills(); //
+  } = useSkills();
+  
+  // --- New Settings Hook ---
+  const { settings, updateSettings } = useSettings();
 
-  // --- State Managment (Kept from original) ---
+  // --- State Management ---
   const [newPosName, setNewPosName] = useState('');
   const [editingPosId, setEditingPosId] = useState(null);
   const [newSkillName, setNewSkillName] = useState('');
@@ -31,7 +36,40 @@ function AdminPanel() {
   const [assignPosId, setAssignPosId] = useState('');
   const [assignSkillId, setAssignSkillId] = useState('');
 
-  // --- Handlers (Kept from original) ---
+  // --- New Local State for Site Settings ---
+  const [siteName, setSiteName] = useState('');
+  const [siteBgColor, setSiteBgColor] = useState('#0f172a');
+  const [siteFooter, setSiteFooter] = useState('');
+
+  // Sync local state when settings load from Firebase
+  useEffect(() => {
+    if (settings) {
+      setSiteName(settings.name || '');
+      setSiteBgColor(settings.bgColor || '#0f172a');
+      setSiteFooter(settings.footerText || '');
+    }
+  }, [settings]);
+
+  // --- Handlers ---
+  const handleSaveGlobalSettings = async () => {
+    await updateSettings({
+      name: siteName,
+      bgColor: siteBgColor,
+      footerText: siteFooter
+    });
+    alert("Site configuration saved!");
+  };
+
+  const handleProfilePicUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const storageRef = ref(storage, `settings/profilePic_${Date.now()}`);
+    await uploadBytes(storageRef, file);
+    const url = await getDownloadURL(storageRef);
+    await updateSettings({ profilePic: url });
+    alert("Profile picture updated!");
+  };
+
   const handleAddOrUpdatePosition = async () => {
     if (!newPosName.trim()) return;
     if (editingPosId) {
@@ -94,6 +132,36 @@ function AdminPanel() {
         <span style={{ color: 'var(--text-muted)' }}>Logged in as {user.email}</span>
       </div>
 
+      {/* --- NEW: Site Configuration Section --- */}
+      <section className="card" style={{ marginBottom: '2rem', border: '1px solid var(--primary)' }}>
+        <h3 style={{ color: 'var(--primary)', marginBottom: '1.5rem' }}>Global Site Settings</h3>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Portfolio Name</label>
+            <input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Your Name" />
+            
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem' }}>Background Color</label>
+            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                <input type="color" value={siteBgColor} onChange={(e) => setSiteBgColor(e.target.value)} style={{ width: '50px', height: '40px', padding: '0' }} />
+                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{siteBgColor}</span>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Footer Text</label>
+            <input value={siteFooter} onChange={(e) => setSiteFooter(e.target.value)} placeholder="© 2024 Your Portfolio" />
+            
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem' }}>Profile Picture</label>
+            <input type="file" accept="image/*" onChange={handleProfilePicUpload} style={{ fontSize: '0.8rem' }} />
+          </div>
+
+        </div>
+        <button className="btn btn-primary" onClick={handleSaveGlobalSettings} style={{ marginTop: '1.5rem' }}>
+          Update Site Info
+        </button>
+      </section>
+
       <div className="admin-layout" style={{ gridTemplateColumns: '1fr 1fr' }}>
         
         {/* Left Col: Positions & Assignments */}
@@ -124,7 +192,6 @@ function AdminPanel() {
                     </div>
                   </div>
                   
-                  {/* Skills in this position */}
                   {pos.skillIds && pos.skillIds.length > 0 && (
                     <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px' }}>
                       <small style={{ color: 'var(--text-muted)' }}>Assigned Skills:</small>
@@ -195,7 +262,6 @@ function AdminPanel() {
                 </div>
                 <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)', margin: '0 0 10px 0' }}>{skill.description}</p>
                 
-                {/* Media Uploader Micro-component */}
                 <div style={{ background: 'rgba(255,255,255,0.03)', padding: '10px', borderRadius: '6px' }}>
                   <label style={{ fontSize: '0.8rem', display: 'block', marginBottom: '5px' }}>Add Media:</label>
                   <div style={{ display: 'flex', gap: '5px' }}>
@@ -215,7 +281,6 @@ function AdminPanel() {
                   </button>
                 </div>
 
-                {/* Media Preview */}
                 {skill.media && skill.media.length > 0 && (
                    <div style={{ display: 'flex', gap: '5px', marginTop: '10px', overflowX: 'auto' }}>
                      {skill.media.map((m, idx) => (
