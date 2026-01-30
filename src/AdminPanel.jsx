@@ -5,8 +5,7 @@ import { AuthContext } from './context/AuthContext';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 import { useSettings } from './hooks/useSettings'; // You will need to create this hook
-import { storage } from './firebase';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+
 
 function AdminPanel() {
   const { user } = useContext(AuthContext);
@@ -60,15 +59,28 @@ function AdminPanel() {
     alert("Site configuration saved!");
   };
 
-  const handleProfilePicUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const storageRef = ref(storage, `settings/profilePic_${Date.now()}`);
-    await uploadBytes(storageRef, file);
-    const url = await getDownloadURL(storageRef);
-    await updateSettings({ profilePic: url });
-    alert("Profile picture updated!");
-  };
+const handleProfilePicUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'portfolio_uploads'); // The preset you created
+
+  try {
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/j-portfolio/image/upload`,
+      { method: 'POST', body: formData }
+    );
+    const data = await response.json();
+    
+    // data.secure_url is the permanent link
+    await updateSettings({ profilePic: data.secure_url });
+    alert("Profile picture updated via Cloudinary!");
+  } catch (err) {
+    console.error("Upload failed", err);
+  }
+};
 
   const handleAddOrUpdatePosition = async () => {
     if (!newPosName.trim()) return;
@@ -106,14 +118,29 @@ function AdminPanel() {
   };
 
   const handleUploadMedia = async () => {
-    if (!mediaFile || !targetSkillId) return;
-    const storageRef = ref(storage, `media/${Date.now()}_${mediaFile.name}`);
-    await uploadBytes(storageRef, mediaFile);
-    const url = await getDownloadURL(storageRef);
-    await addMediaToSkill(targetSkillId, { type: mediaType, url });
+  if (!mediaFile || !targetSkillId) return;
+
+  const formData = new FormData();
+  formData.append('file', mediaFile);
+  formData.append('upload_preset', 'portfolio_uploads');
+
+  try {
+    // Cloudinary handles both images and videos at this endpoint
+    const resourceType = mediaType === 'video' ? 'video' : 'image';
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/j-portfolio/${resourceType}/upload`,
+      { method: 'POST', body: formData }
+    );
+    const data = await response.json();
+    
+    await addMediaToSkill(targetSkillId, { type: mediaType, url: data.secure_url });
     setMediaFile(null);
     setTargetSkillId('');
-  };
+    alert("Media uploaded successfully!");
+  } catch (err) {
+    console.error("Cloudinary error:", err);
+  }
+};
 
   const handleAssignSkill = async () => {
     if (assignPosId && assignSkillId) {

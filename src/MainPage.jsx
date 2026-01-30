@@ -40,17 +40,12 @@ function MainPage() {
         <div style={{ marginBottom: '2rem' }}>
           {settings?.profilePic ? (
             <img 
-              src={settings.profilePic} 
-              alt={displayName} 
-              style={{ 
-                width: '120px', 
-                height: '120px', 
-                borderRadius: '50%', 
-                objectFit: 'cover', 
-                border: '3px solid var(--primary)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
-              }} 
-            />
+  // This adds "c_fill,g_face,w_300,q_auto,f_auto" to the URL
+  // It automatically finds the face, crops to 300px, and optimizes format!
+  src={settings.profilePic.replace('/upload/', '/upload/c_fill,g_face,w_300,q_auto,f_auto/')} 
+  alt={displayName} 
+  style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover' }} 
+/>
           ) : (
             <div style={{ 
               width: '120px', height: '120px', borderRadius: '50%', 
