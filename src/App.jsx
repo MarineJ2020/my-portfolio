@@ -7,31 +7,31 @@ import AdminPanel from './AdminPanel';
 import Login from './Login';
 
 function App() {
-  const { user, loading, logout } = useContext(AuthContext);
+  const { user, loading, logout } = useContext(AuthContext); //
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '50px' }}>Loading...</div>;
+    return <div style={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0f172a', color: 'white' }}>Loading...</div>;
   }
 
   return (
     <div className="app">
       <nav>
-        <Link to="/">Home</Link>
-        {user ? (
-          <>
-            {' | '}
-            <Link to="/admin">Admin</Link>
-            {' | '}
-            <button onClick={logout} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer' }}>
-              Logout
-            </button>
-          </>
-        ) : (
-          <>
-            {' | '}
+        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
+          <Link to="/" style={{ color: 'white', textDecoration: 'none', marginLeft: 0 }}>Portfolio</Link>
+        </div>
+        <div>
+          <Link to="/">Home</Link>
+          {user ? (
+            <>
+              <Link to="/admin">Dashboard</Link>
+              <button onClick={logout} className="btn btn-ghost" style={{ marginLeft: '1rem', padding: '0.5rem 1rem' }}>
+                Logout
+              </button>
+            </>
+          ) : (
             <Link to="/login">Login</Link>
-          </>
-        )}
+          )}
+        </div>
       </nav>
 
       <Routes>

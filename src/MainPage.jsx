@@ -4,11 +4,17 @@ import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 
 function MainPage() {
-  const { positions } = usePositions();
-  const { skills } = useSkills();
+  const { positions } = usePositions(); //
+  const { skills } = useSkills(); //
 
+  // Default to first position if available, otherwise empty
   const [activePositionId, setActivePositionId] = useState(positions[0]?.id || '');
   const [selectedSkill, setSelectedSkill] = useState(null);
+
+  // If activePositionId is empty but positions exist, set it (fixes initial load async issue)
+  if (!activePositionId && positions.length > 0) {
+    setActivePositionId(positions[0].id);
+  }
 
   const activePosition = positions.find(p => p.id === activePositionId);
   const activeSkills = activePosition
@@ -16,107 +22,107 @@ function MainPage() {
     : [];
 
   return (
-    <div className="main-page" style={{ padding: '20px', fontFamily: 'sans-serif' }}>
-      {/* Header */}
-      <header style={{ textAlign: 'center', marginBottom: '40px' }}>
-        <img src="/your-photo.jpg" alt="Your Name" style={{ width: '150px', borderRadius: '50%' }} />
-        <h1>Your Name</h1>
-      </header>
-
-      {/* Position Tabs */}
-      <div className="tabs" style={{ display: 'flex', gap: '10px', marginBottom: '30px', flexWrap: 'wrap' }}>
-        {positions.map(pos => (
-          <button
-            key={pos.id}
-            onClick={() => setActivePositionId(pos.id)}
-            style={{
-              padding: '10px 20px',
-              background: activePositionId === pos.id ? '#007bff' : '#f0f0f0',
-              color: activePositionId === pos.id ? 'white' : 'black',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer'
-            }}
-          >
-            {pos.name}
-          </button>
-        ))}
-      </div>
-
-      {/* Skills Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-        gap: '20px'
-      }}>
-        {activeSkills.map(skill => (
-          <div
-            key={skill.id}
-            onClick={() => setSelectedSkill(skill)}
-            style={{
-              padding: '20px',
-              background: '#f8f9fa',
-              borderRadius: '12px',
-              textAlign: 'center',
-              cursor: 'pointer',
-              boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-              transition: 'transform 0.2s'
-            }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.05)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <h3>{skill.name}</h3>
+    <div className="main-page">
+      {/* Hero Section */}
+      <section className="container" style={{ textAlign: 'center', padding: '6rem 1rem 4rem' }}>
+        <div style={{ marginBottom: '2rem' }}>
+          {/* Placeholder for Profile - Replace src with real URL via Admin later */}
+          <div style={{ 
+            width: '120px', height: '120px', borderRadius: '50%', 
+            background: 'linear-gradient(45deg, var(--primary), #ec4899)', 
+            margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: '3rem', fontWeight: 'bold'
+          }}>
+            YN
           </div>
-        ))}
-      </div>
+        </div>
+        <h1>Creative Developer & <br /> Tech Enthusiast</h1>
+        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', margin: '1rem auto' }}>
+          I build accessible, pixel-perfect, and performant web experiences. 
+          Explore my technical expertise by role below.
+        </p>
+      </section>
 
-      {/* Modal Popup */}
-      {selectedSkill && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.7)',
-            backdropFilter: 'blur(8px)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 1000
-          }}
-          onClick={() => setSelectedSkill(null)}
-        >
-          <div
-            style={{
-              background: 'white',
-              padding: '30px',
-              borderRadius: '16px',
-              maxWidth: '90%',
-              maxHeight: '90%',
-              overflow: 'auto'
-            }}
-            onClick={e => e.stopPropagation()}
-          >
-            <h2>{selectedSkill.name}</h2>
-            <div style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-              gap: '15px',
-              margin: '20px 0'
-            }}>
-              {selectedSkill.media?.map((m, idx) => (
-                <div key={idx}>
-                  {m.type === 'image' ? (
-                    <img src={m.url} alt="media" style={{ width: '100%', borderRadius: '8px' }} />
-                  ) : (
-                    <video src={m.url} controls style={{ width: '100%', borderRadius: '8px' }} />
-                  )}
-                </div>
-              ))}
-            </div>
-            <p>{selectedSkill.description || 'No description'}</p>
-            <button onClick={() => setSelectedSkill(null)} style={{ padding: '10px 20px' }}>
-              Close
+      {/* Navigation / Filtering */}
+      <section className="container">
+        <div className="tabs">
+          {positions.map(pos => (
+            <button
+              key={pos.id}
+              onClick={() => setActivePositionId(pos.id)}
+              className={`tab-btn ${activePositionId === pos.id ? 'active' : ''}`}
+            >
+              {pos.name}
             </button>
+          ))}
+        </div>
+
+        {/* Content Grid */}
+        <div className="skills-grid">
+          {activeSkills.length > 0 ? (
+            activeSkills.map(skill => (
+              <div
+                key={skill.id}
+                onClick={() => setSelectedSkill(skill)}
+                className="skill-card"
+              >
+                <h3>{skill.name}</h3>
+                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
+                  {skill.description ? skill.description.substring(0, 60) + '...' : 'View details'}
+                </p>
+                <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.6 }}>
+                   Click to view media
+                </div>
+              </div>
+            ))
+          ) : (
+            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)' }}>
+              <p>No skills listed for this position yet.</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Detail Modal */}
+      {selectedSkill && (
+        <div className="modal-overlay" onClick={() => setSelectedSkill(null)}>
+          <div className="modal-content" onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h2 style={{ margin: 0, color: 'var(--primary)' }}>{selectedSkill.name}</h2>
+              <button 
+                onClick={() => setSelectedSkill(null)}
+                style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}
+              >
+                &times;
+              </button>
+            </div>
+            
+            <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: '1.8' }}>
+              {selectedSkill.description || 'No description provided.'}
+            </p>
+
+            {selectedSkill.media && selectedSkill.media.length > 0 && (
+              <>
+                <h4 style={{ marginTop: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Gallery</h4>
+                <div className="media-grid">
+                  {selectedSkill.media.map((m, idx) => (
+                    <div key={idx}>
+                      {m.type === 'image' ? (
+                        <img src={m.url} alt={`${selectedSkill.name} demo ${idx}`} loading="lazy" />
+                      ) : (
+                        <video src={m.url} controls muted />
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            
+            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
+              <button className="btn btn-primary" onClick={() => setSelectedSkill(null)}>
+                Close Details
+              </button>
+            </div>
           </div>
         </div>
       )}
