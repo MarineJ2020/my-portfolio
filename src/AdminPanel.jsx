@@ -5,7 +5,7 @@ import { AuthContext } from './context/AuthContext';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 import { useSettings } from './hooks/useSettings'; // You will need to create this hook
-
+import { getYouTubeEmbedUrl } from './utils/youtube';
 
 function AdminPanel() {
   const { user } = useContext(AuthContext);
@@ -16,6 +16,7 @@ function AdminPanel() {
     updateSkill,
     deleteSkill,
     addMediaToSkill,
+    removeMediaFromSkill,
     assignSkillToPosition,
     removeSkillFromPosition,
   } = useSkills();
@@ -25,6 +26,7 @@ function AdminPanel() {
 
   // --- State Management ---
   const [newPosName, setNewPosName] = useState('');
+  const [newPosHeadline, setNewPosHeadline] = useState('');
   const [editingPosId, setEditingPosId] = useState(null);
   const [newSkillName, setNewSkillName] = useState('');
   const [newSkillDesc, setNewSkillDesc] = useState('');
@@ -34,6 +36,7 @@ function AdminPanel() {
   const [targetSkillId, setTargetSkillId] = useState('');
   const [assignPosId, setAssignPosId] = useState('');
   const [assignSkillId, setAssignSkillId] = useState('');
+  const [youtubeUrlBySkillId, setYoutubeUrlBySkillId] = useState({});
 
   // --- New Local State for Site Settings ---
   const [siteName, setSiteName] = useState('');
@@ -85,16 +88,18 @@ const handleProfilePicUpload = async (e) => {
   const handleAddOrUpdatePosition = async () => {
     if (!newPosName.trim()) return;
     if (editingPosId) {
-      await updatePosition(editingPosId, { name: newPosName });
+      await updatePosition(editingPosId, { name: newPosName, headline: newPosHeadline || '' });
       setEditingPosId(null);
     } else {
-      await addPosition(newPosName);
+      await addPosition(newPosName, newPosHeadline);
     }
     setNewPosName('');
+    setNewPosHeadline('');
   };
 
   const handleEditPosition = (pos) => {
     setNewPosName(pos.name);
+    setNewPosHeadline(pos.headline || '');
     setEditingPosId(pos.id);
   };
 
@@ -150,6 +155,17 @@ const handleProfilePicUpload = async (e) => {
     }
   };
 
+  const handleAddYouTube = async (skillId) => {
+    const url = (youtubeUrlBySkillId[skillId] || '').trim();
+    if (!getYouTubeEmbedUrl(url)) {
+      alert('Please enter a valid YouTube URL (e.g. https://www.youtube.com/watch?v=... or https://youtu.be/...)');
+      return;
+    }
+    await addMediaToSkill(skillId, { type: 'video', url });
+    setYoutubeUrlBySkillId((prev) => ({ ...prev, [skillId]: '' }));
+    alert('YouTube video added!');
+  };
+
   if (!user) return <div className="container" style={{paddingTop: '100px', textAlign:'center'}}>Access denied. Please log in.</div>;
 
   return (
@@ -197,15 +213,28 @@ const handleProfilePicUpload = async (e) => {
           {/* Positions Manager */}
           <section className="card">
             <h3>Manage Positions</h3>
-            <div style={{ display: 'flex', gap: '10px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '1rem' }}>
               <input
                 value={newPosName}
                 onChange={(e) => setNewPosName(e.target.value)}
-                placeholder="Ex: Frontend Developer"
+                placeholder="Position name (e.g. Frontend Developer)"
               />
-              <button className="btn btn-primary" onClick={handleAddOrUpdatePosition} style={{ whiteSpace: 'nowrap', height: '46px' }}>
-                {editingPosId ? 'Update' : 'Add'}
-              </button>
+              <input
+                value={newPosHeadline}
+                onChange={(e) => setNewPosHeadline(e.target.value)}
+                placeholder="Headline under your name (e.g. I build accessible, pixel-perfect web experiences...)"
+                style={{ fontSize: '0.9rem' }}
+              />
+              <div style={{ display: 'flex', gap: '10px' }}>
+                <button className="btn btn-primary" onClick={handleAddOrUpdatePosition} style={{ whiteSpace: 'nowrap', height: '46px' }}>
+                  {editingPosId ? 'Update' : 'Add'}
+                </button>
+                {editingPosId && (
+                  <button className="btn btn-ghost" style={{ height: '46px' }} onClick={() => { setEditingPosId(null); setNewPosName(''); setNewPosHeadline(''); }}>
+                    Cancel
+                  </button>
+                )}
+              </div>
             </div>
             
             <ul style={{ listStyle: 'none', padding: 0, marginTop: '1rem' }}>
@@ -218,7 +247,9 @@ const handleProfilePicUpload = async (e) => {
                       <button className="btn btn-ghost" style={{ padding: '5px 10px', color: '#ef4444' }} onClick={() => deletePosition(pos.id)}>Delete</button>
                     </div>
                   </div>
-                  
+                  {pos.headline && (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', margin: '6px 0 0 0', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={pos.headline}>{pos.headline}</p>
+                  )}
                   {pos.skillIds && pos.skillIds.length > 0 && (
                     <div style={{ marginTop: '10px', padding: '10px', background: 'rgba(0,0,0,0.2)', borderRadius: '6px' }}>
                       <small style={{ color: 'var(--text-muted)' }}>Assigned Skills:</small>
@@ -306,17 +337,47 @@ const handleProfilePicUpload = async (e) => {
                   >
                     Upload to {skill.name}
                   </button>
+                  <div style={{ marginTop: '10px', display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ fontSize: '0.8rem', flex: '0 0 100%' }}>Or YouTube URL:</label>
+                    <input
+                      type="url"
+                      value={youtubeUrlBySkillId[skill.id] || ''}
+                      onChange={(e) => setYoutubeUrlBySkillId((prev) => ({ ...prev, [skill.id]: e.target.value }))}
+                      placeholder="https://youtube.com/watch?v=..."
+                      style={{ flex: '1', minWidth: '160px' }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-ghost"
+                      style={{ padding: '6px 12px', whiteSpace: 'nowrap' }}
+                      onClick={() => handleAddYouTube(skill.id)}
+                      disabled={!youtubeUrlBySkillId[skill.id]?.trim()}
+                    >
+                      Add YouTube
+                    </button>
+                  </div>
                 </div>
 
                 {skill.media && skill.media.length > 0 && (
-                   <div style={{ display: 'flex', gap: '5px', marginTop: '10px', overflowX: 'auto' }}>
+                   <div style={{ display: 'flex', gap: '5px', marginTop: '10px', overflowX: 'auto', flexWrap: 'wrap' }}>
                      {skill.media.map((m, idx) => (
-                       <a key={idx} href={m.url} target="_blank" rel="noreferrer" style={{ display: 'block', width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--glass-border)' }}>
-                         {m.type === 'image' 
-                           ? <img src={m.url} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                           : <div style={{ width: '100%', height: '100%', background: '#000', color: 'white', fontSize: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>VID</div>
-                         }
-                       </a>
+                       <div key={idx} className="media-thumb-wrap" style={{ width: '40px', height: '40px', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--glass-border)', flexShrink: 0 }}>
+                         <a href={m.url} target="_blank" rel="noreferrer" style={{ display: 'block', width: '100%', height: '100%' }}>
+                           {m.type === 'image'
+                             ? <img src={m.url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                             : <div style={{ width: '100%', height: '100%', background: '#000', color: 'white', fontSize: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>VID</div>
+                           }
+                         </a>
+                         <button
+                           type="button"
+                           className="media-thumb-delete"
+                           onClick={(e) => { e.preventDefault(); e.stopPropagation(); removeMediaFromSkill(skill.id, m); }}
+                           title="Remove media"
+                           aria-label="Remove media"
+                         >
+                           ×
+                         </button>
+                       </div>
                      ))}
                    </div>
                 )}

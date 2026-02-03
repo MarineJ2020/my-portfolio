@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 import { useSettings } from './hooks/useSettings'; // Import the settings hook
+import { getYouTubeEmbedUrl } from './utils/youtube';
 
 function MainPage() {
   const { positions } = usePositions();
@@ -59,8 +60,7 @@ function MainPage() {
         </div>
         <h1>{displayName}</h1>
         <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', margin: '1rem auto' }}>
-          I build accessible, pixel-perfect, and performant web experiences. 
-          Explore my technical expertise by role below.
+          {activePosition?.headline || 'I build accessible, pixel-perfect, and performant web experiences. Explore my technical expertise by role below.'}
         </p>
       </section>
 
@@ -127,9 +127,17 @@ function MainPage() {
                 <h4 style={{ marginTop: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Gallery</h4>
                 <div className="media-grid">
                   {selectedSkill.media.map((m, idx) => (
-                    <div key={idx}>
+                    <div key={idx} className="media-grid-item">
                       {m.type === 'image' ? (
                         <img src={m.url} alt={`${selectedSkill.name} demo ${idx}`} loading="lazy" />
+                      ) : getYouTubeEmbedUrl(m.url) ? (
+                        <iframe
+                          src={getYouTubeEmbedUrl(m.url)}
+                          title={`${selectedSkill.name} video ${idx}`}
+                          frameBorder="0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
                       ) : (
                         <video src={m.url} controls muted />
                       )}

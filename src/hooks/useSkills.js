@@ -33,6 +33,12 @@ export function useSkills() {
     });
   };
 
+  const removeMediaFromSkill = async (skillId, mediaItem) => {
+    await updateDoc(doc(db, 'skills', skillId), {
+      media: arrayRemove(mediaItem)
+    });
+  };
+
   const assignSkillToPosition = async (positionId, skillId) => {
     await updateDoc(doc(db, 'positions', positionId), {
       skillIds: arrayUnion(skillId)
@@ -52,6 +58,7 @@ export function useSkills() {
     updateSkill,
     deleteSkill,
     addMediaToSkill,
+    removeMediaFromSkill,
     assignSkillToPosition,
     removeSkillFromPosition
   };

@@ -15,8 +15,8 @@ export function usePositions() {
     return unsubscribe;
   }, []);
 
-  const addPosition = async (name) => {
-    await addDoc(collection(db, 'positions'), { name, skillIds: [] });
+  const addPosition = async (name, headline = '') => {
+    await addDoc(collection(db, 'positions'), { name, headline: headline || '', skillIds: [] });
   };
 
   const updatePosition = async (id, updates) => {
