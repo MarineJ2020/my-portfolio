@@ -45,7 +45,6 @@ nav a, footer a {
 
 /* Light theme: default contrasting palette (overridden by JS when custom lightBg) */
 body.light-theme {
-  --page-bg: #f8fafc;
   --bg-card: #ffffff;
   --text-main: #1e293b;
   --text-muted: #475569;
@@ -247,7 +246,8 @@ body.light-theme .modal-overlay {
   width: 90%;
   max-width: 800px;
   max-height: 90vh;
-  overflow-y: auto;
+  overflow: hidden;
+  overflow-x: hidden;
   position: relative;
   animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }

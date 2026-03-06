@@ -35,10 +35,19 @@ function MainPage() {
     setTheme(isDay ? 'light' : 'dark');
   }, [manualOverride]);
 
+  // Lock background scrolling when modal is open
+  useEffect(() => {
+    const isModalOpen = selectedSkill || selectedWork;
+    document.body.style.overflow = isModalOpen ? 'hidden' : '';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [selectedSkill, selectedWork]);
+
   // Apply body styles: use --page-bg for smooth transition; light theme gets auto-contrast
   useEffect(() => {
     document.body.className = `${theme}-theme`;
-    const bg = theme === 'light' ? settings.lightBg : settings.darkBg;
+    const bg = theme === 'light' ? (settings.lightBg || '#f8fafc') : (settings.darkBg || '#0f172a');
     document.documentElement.style.setProperty('--page-bg', bg);
 
     const target = document.body;
@@ -210,28 +219,30 @@ function MainPage() {
                   <span key={index} className={`orbit-dot orbit-dot-${index}`} />
                 ))}
               </div>
-              <h2>{selectedSkill.name}</h2>
-              <p>{selectedSkill.description}</p>
+              <div style={{ maxHeight: 'calc(90vh - 5rem)', overflowY: 'auto' }}>
+                <h2>{selectedSkill.name}</h2>
+                <p>{selectedSkill.description}</p>
 
-              <div className="media-grid">
-                {selectedSkill.media?.map((m, i) => (
-                  <div key={i}>
-                    {m.type === 'image' ? (
-                      <img src={m.url} alt="" />
-                    ) : (
-                      <video src={m.url} controls muted />
-                    )}
-                  </div>
-                ))}
+                <div className="media-grid">
+                  {selectedSkill.media?.map((m, i) => (
+                    <div key={i}>
+                      {m.type === 'image' ? (
+                        <img src={m.url} alt="" />
+                      ) : (
+                        <video src={m.url} controls muted />
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                <button
+                  className="btn btn-primary"
+                  style={{ marginTop: 20 }}
+                  onClick={() => setSelectedSkill(null)}
+                >
+                  Close
+                </button>
               </div>
-
-              <button
-                className="btn btn-primary"
-                style={{ marginTop: 20 }}
-                onClick={() => setSelectedSkill(null)}
-              >
-                Close
-              </button>
             </div>
           </div>
         )}
