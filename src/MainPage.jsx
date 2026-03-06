@@ -4,6 +4,7 @@ import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 import { useExampleWork } from './hooks/useExampleWork';
 import { useSettings } from './hooks/useSettings';
+import ParticleBackground from './ParticleBackground';
 
 function MainPage() {
   const { positions } = usePositions();
@@ -90,35 +91,13 @@ function MainPage() {
   return (
     <div className="main-page" style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
       
-      {/* Background Animation */}
+      {/* Background Animation (canvas particles) */}
       {settings.animEnabled && (
-        <div className={`bg-anim anim-${theme}`}>
-          {theme === 'light'
-            ? [...Array(6)].map((_, i) => (
-                <div
-                  key={i}
-                  className="cloud"
-                  style={{
-                    background: settings.lightAnimColor,
-                    top: `${i * 15}%`,
-                    left: `-${Math.random() * 20}%`,
-                    animationDuration: `${20 + i * 5}s`,
-                  }}
-                />
-              ))
-            : [...Array(40)].map((_, i) => (
-                <div
-                  key={i}
-                  className="star"
-                  style={{
-                    background: settings.darkAnimColor,
-                    top: `${Math.random() * 100}%`,
-                    left: `${Math.random() * 100}%`,
-                    animationDelay: `${Math.random() * 3}s`,
-                  }}
-                />
-              ))}
-        </div>
+        <ParticleBackground
+          theme={theme}
+          settings={settings}
+          selectedSkill={selectedSkill}
+        />
       )}
 
       {/* Content Layer */}
@@ -226,6 +205,11 @@ function MainPage() {
         {selectedSkill && (
           <div className="modal-overlay" onClick={() => setSelectedSkill(null)}>
             <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <div className="skill-orbit">
+                {[...Array(8)].map((_, index) => (
+                  <span key={index} className={`orbit-dot orbit-dot-${index}`} />
+                ))}
+              </div>
               <h2>{selectedSkill.name}</h2>
               <p>{selectedSkill.description}</p>
 

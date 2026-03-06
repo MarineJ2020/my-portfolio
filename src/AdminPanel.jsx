@@ -70,13 +70,97 @@ function AdminPanel() {
   const [footerLinksLocal, setFooterLinksLocal] = useState([]);
   const [showFooterModal, setShowFooterModal] = useState(false);
 
+  // Background / particle controls
+  const [siteAnimEnabled, setSiteAnimEnabled] = useState(true);
+  const [siteLightAnimColor, setSiteLightAnimColor] = useState('#e2e8f0');
+  const [siteDarkAnimColor, setSiteDarkAnimColor] = useState('#f8fafc');
+  const [siteBgDensity, setSiteBgDensity] = useState(50);   // 0–100
+  const [siteBgDotSize, setSiteBgDotSize] = useState(1.5);  // px
+  const [siteBgOpacity, setSiteBgOpacity] = useState(0.55); // 0–1
+  const [siteBgSpeed, setSiteBgSpeed] = useState(45);       // seconds (base)
+  const [siteBgShapeType, setSiteBgShapeType] = useState('circle');
+  const [siteBgShapeChar, setSiteBgShapeChar] = useState('●');
+  const [siteBgMoveEnabled, setSiteBgMoveEnabled] = useState(true);
+  const [siteBgMoveSpeed, setSiteBgMoveSpeed] = useState(1.0);
+  const [siteBgMoveDirection, setSiteBgMoveDirection] = useState('none');
+  const [siteBgMoveRandom, setSiteBgMoveRandom] = useState(true);
+  const [siteBgMoveStraight, setSiteBgMoveStraight] = useState(false);
+  const [siteBgMoveOutMode, setSiteBgMoveOutMode] = useState('out');
+  const [siteBgLinksEnabled, setSiteBgLinksEnabled] = useState(false);
+  const [siteBgLinksDistance, setSiteBgLinksDistance] = useState(120);
+  const [siteBgLinksOpacity, setSiteBgLinksOpacity] = useState(0.3);
+  const [siteBgLinksWidth, setSiteBgLinksWidth] = useState(1);
+  const [siteBgLinksColorMode, setSiteBgLinksColorMode] = useState('match');
+  const [siteBgHoverMode, setSiteBgHoverMode] = useState('none');
+  const [siteBgClickMode, setSiteBgClickMode] = useState('none');
+  const [siteBgTrailEnabled, setSiteBgTrailEnabled] = useState(false);
+  const [siteBgTrailLength, setSiteBgTrailLength] = useState(8);
+  const [siteBgTrailOpacity, setSiteBgTrailOpacity] = useState(0.25);
+  const [siteBgZLayers, setSiteBgZLayers] = useState(24);
+  const [showBgDrawer, setShowBgDrawer] = useState(false);
+
   // Sync local state when settings load from Firebase
   useEffect(() => {
     if (settings) {
+      const toHex = (val, fallback) => {
+        if (typeof val !== 'string') return fallback;
+        const trimmed = val.trim();
+        return /^#([0-9a-fA-F]{6})$/.test(trimmed) ? trimmed : fallback;
+      };
+
       setSiteName(settings.name || '');
       setSiteLightBg(settings.lightBg || '#f8fafc');
       setSiteDarkBg(settings.darkBg || '#0f172a');
       setFooterLinksLocal(settings.footerLinks || []);
+
+      setSiteAnimEnabled(settings.animEnabled ?? true);
+      setSiteLightAnimColor(toHex(settings.lightAnimColor, '#e2e8f0'));
+      setSiteDarkAnimColor(toHex(settings.darkAnimColor, '#f8fafc'));
+      setSiteBgDensity(
+        typeof settings.bgDensity === 'number' ? settings.bgDensity : 50
+      );
+      setSiteBgDotSize(
+        typeof settings.bgDotSize === 'number' ? settings.bgDotSize : 1.5
+      );
+      setSiteBgOpacity(
+        typeof settings.bgOpacity === 'number' ? settings.bgOpacity : 0.55
+      );
+      setSiteBgSpeed(
+        typeof settings.bgSpeed === 'number' ? settings.bgSpeed : 45
+      );
+      setSiteBgShapeType(settings.bgShapeType || 'circle');
+      setSiteBgShapeChar(settings.bgShapeChar || '●');
+      setSiteBgMoveEnabled(settings.bgMoveEnabled ?? true);
+      setSiteBgMoveSpeed(
+        typeof settings.bgMoveSpeed === 'number' ? settings.bgMoveSpeed : 1.0
+      );
+      setSiteBgMoveDirection(settings.bgMoveDirection || 'none');
+      setSiteBgMoveRandom(settings.bgMoveRandom ?? true);
+      setSiteBgMoveStraight(settings.bgMoveStraight ?? false);
+      setSiteBgMoveOutMode(settings.bgMoveOutMode || 'out');
+      setSiteBgLinksEnabled(settings.bgLinksEnabled ?? false);
+      setSiteBgLinksDistance(
+        typeof settings.bgLinksDistance === 'number' ? settings.bgLinksDistance : 120
+      );
+      setSiteBgLinksOpacity(
+        typeof settings.bgLinksOpacity === 'number' ? settings.bgLinksOpacity : 0.3
+      );
+      setSiteBgLinksWidth(
+        typeof settings.bgLinksWidth === 'number' ? settings.bgLinksWidth : 1
+      );
+      setSiteBgLinksColorMode(settings.bgLinksColorMode || 'match');
+      setSiteBgHoverMode(settings.bgHoverMode || 'none');
+      setSiteBgClickMode(settings.bgClickMode || 'none');
+      setSiteBgTrailEnabled(settings.bgTrailEnabled ?? false);
+      setSiteBgTrailLength(
+        typeof settings.bgTrailLength === 'number' ? settings.bgTrailLength : 8
+      );
+      setSiteBgTrailOpacity(
+        typeof settings.bgTrailOpacity === 'number' ? settings.bgTrailOpacity : 0.25
+      );
+      setSiteBgZLayers(
+        typeof settings.bgZLayers === 'number' ? settings.bgZLayers : 24
+      );
     }
   }, [settings]);
 
@@ -86,7 +170,33 @@ function AdminPanel() {
       name: siteName,
       lightBg: siteLightBg,
       darkBg: siteDarkBg,
-      footerLinks: footerLinksLocal
+      footerLinks: footerLinksLocal,
+      animEnabled: siteAnimEnabled,
+      lightAnimColor: siteLightAnimColor,
+      darkAnimColor: siteDarkAnimColor,
+      bgDensity: siteBgDensity,
+      bgDotSize: siteBgDotSize,
+      bgOpacity: siteBgOpacity,
+      bgSpeed: siteBgSpeed,
+      bgShapeType: siteBgShapeType,
+      bgShapeChar: siteBgShapeChar,
+      bgMoveEnabled: siteBgMoveEnabled,
+      bgMoveSpeed: siteBgMoveSpeed,
+      bgMoveDirection: siteBgMoveDirection,
+      bgMoveRandom: siteBgMoveRandom,
+      bgMoveStraight: siteBgMoveStraight,
+      bgMoveOutMode: siteBgMoveOutMode,
+      bgLinksEnabled: siteBgLinksEnabled,
+      bgLinksDistance: siteBgLinksDistance,
+      bgLinksOpacity: siteBgLinksOpacity,
+      bgLinksWidth: siteBgLinksWidth,
+      bgLinksColorMode: siteBgLinksColorMode,
+      bgHoverMode: siteBgHoverMode,
+      bgClickMode: siteBgClickMode,
+      bgTrailEnabled: siteBgTrailEnabled,
+      bgTrailLength: siteBgTrailLength,
+      bgTrailOpacity: siteBgTrailOpacity,
+      bgZLayers: siteBgZLayers,
     });
     alert("Site configuration saved!");
   };
@@ -325,8 +435,9 @@ const handleProfilePicUpload = async (e) => {
       {/* --- NEW: Site Configuration Section --- */}
       <section className="card" style={{ marginBottom: '2rem', border: '1px solid var(--primary)' }}>
         <h3 style={{ color: 'var(--primary)', marginBottom: '1.5rem' }}>Global Site Settings</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '1.5rem' }}>
           
+          {/* Basic site + base background */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Portfolio Name</label>
             <input value={siteName} onChange={(e) => setSiteName(e.target.value)} placeholder="Your Name" />
@@ -343,6 +454,7 @@ const handleProfilePicUpload = async (e) => {
             </div>
           </div>
 
+          {/* Footer + profile */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
             <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Footer Links</label>
             <div>
@@ -353,6 +465,316 @@ const handleProfilePicUpload = async (e) => {
             
             <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem' }}>Profile Picture</label>
             <input type="file" accept="image/*" onChange={handleProfilePicUpload} style={{ fontSize: '0.8rem' }} />
+          </div>
+
+          {/* Background particle controls (collapsed into drawer) */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div>
+                <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Background Particles</label>
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Density, color, movement, links &amp; trails
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                  <input
+                    type="checkbox"
+                    checked={siteAnimEnabled}
+                    onChange={(e) => setSiteAnimEnabled(e.target.checked)}
+                  />
+                  Enabled
+                </label>
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  style={{ padding: '4px 10px', fontSize: '0.8rem' }}
+                  onClick={() => setShowBgDrawer(prev => !prev)}
+                >
+                  {showBgDrawer ? 'Hide' : 'Open'} controls
+                </button>
+              </div>
+            </div>
+
+            {showBgDrawer && (
+              <div
+                style={{
+                  marginTop: '0.25rem',
+                  padding: '0.75rem 0.75rem 0.5rem',
+                  borderRadius: '10px',
+                  border: '1px solid var(--glass-border)',
+                  maxHeight: '420px',
+                  overflowY: 'auto',
+                  background: 'rgba(15,23,42,0.5)'
+                }}
+              >
+                <label style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Particle Density</label>
+                <input
+                  type="range"
+                  min="10"
+                  max="100"
+                  value={siteBgDensity}
+                  onChange={(e) => setSiteBgDensity(parseInt(e.target.value, 10) || 10)}
+                />
+                <small style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                  Lower = chill sparse, higher = dense techy matrix ({siteBgDensity})
+                </small>
+
+                <label style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Particle Size (px)</label>
+                <input
+                  type="range"
+                  min="1"
+                  max="6"
+                  step="0.5"
+                  value={siteBgDotSize}
+                  onChange={(e) => setSiteBgDotSize(parseFloat(e.target.value) || 1)}
+                />
+
+                <label style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Particle Opacity</label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="1"
+                  step="0.05"
+                  value={siteBgOpacity}
+                  onChange={(e) => setSiteBgOpacity(parseFloat(e.target.value) || 0.1)}
+                />
+
+                <label style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Base Speed</label>
+                <input
+                  type="range"
+                  min="20"
+                  max="90"
+                  step="5"
+                  value={siteBgSpeed}
+                  onChange={(e) => setSiteBgSpeed(parseInt(e.target.value, 10) || 45)}
+                />
+
+                <div style={{ display: 'flex', gap: '10px', marginTop: '0.75rem' }}>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Light Theme Particle Color</label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="color"
+                        value={siteLightAnimColor}
+                        onChange={(e) => setSiteLightAnimColor(e.target.value)}
+                        style={{ width: '40px', height: '32px', padding: 0 }}
+                      />
+                      <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{siteLightAnimColor}</span>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Dark Theme Particle Color</label>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <input
+                        type="color"
+                        value={siteDarkAnimColor}
+                        onChange={(e) => setSiteDarkAnimColor(e.target.value)}
+                        style={{ width: '40px', height: '32px', padding: 0 }}
+                      />
+                      <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{siteDarkAnimColor}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Shape */}
+                <hr style={{ borderColor: 'rgba(148,163,184,0.35)', margin: '0.75rem 0' }} />
+            <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Particle Shape</label>
+            <select
+              value={siteBgShapeType}
+              onChange={(e) => setSiteBgShapeType(e.target.value)}
+              style={{ marginBottom: '0.25rem' }}
+            >
+              <option value="circle">Circle (classic, chill)</option>
+              <option value="triangle">Triangle (techy)</option>
+              <option value="polygon">Polygon</option>
+              <option value="star">Star (sci‑fi)</option>
+              <option value="char">Character / glyph</option>
+              <option value="image">Custom image / SVG</option>
+            </select>
+            {siteBgShapeType === 'char' && (
+              <input
+                type="text"
+                maxLength={2}
+                value={siteBgShapeChar}
+                onChange={(e) => setSiteBgShapeChar(e.target.value || '●')}
+                placeholder="e.g. ● or █"
+                style={{ fontSize: '0.8rem' }}
+              />
+            )}
+
+                {/* Movement */}
+                <hr style={{ borderColor: 'rgba(148,163,184,0.35)', margin: '0.75rem 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Movement</label>
+              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={siteBgMoveEnabled}
+                  onChange={(e) => setSiteBgMoveEnabled(e.target.checked)}
+                />
+                Enabled
+              </label>
+            </div>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Movement Speed</label>
+            <input
+              type="range"
+              min="0.4"
+              max="6"
+              step="0.2"
+              value={siteBgMoveSpeed}
+              onChange={(e) => setSiteBgMoveSpeed(parseFloat(e.target.value) || 0.4)}
+            />
+            <label style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Direction</label>
+            <select
+              value={siteBgMoveDirection}
+              onChange={(e) => setSiteBgMoveDirection(e.target.value)}
+            >
+              <option value="none">None (float)</option>
+              <option value="top">Top</option>
+              <option value="bottom">Bottom</option>
+              <option value="left">Left</option>
+              <option value="right">Right</option>
+            </select>
+            <div style={{ display: 'flex', gap: '10px', marginTop: '0.5rem' }}>
+              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={siteBgMoveRandom}
+                  onChange={(e) => setSiteBgMoveRandom(e.target.checked)}
+                />
+                Random paths
+              </label>
+              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={siteBgMoveStraight}
+                  onChange={(e) => setSiteBgMoveStraight(e.target.checked)}
+                />
+                Straight
+              </label>
+            </div>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Edge Behavior</label>
+            <select
+              value={siteBgMoveOutMode}
+              onChange={(e) => setSiteBgMoveOutMode(e.target.value)}
+            >
+              <option value="out">Out (respawn)</option>
+              <option value="bounce">Bounce</option>
+            </select>
+
+                {/* Connections / web */}
+                <hr style={{ borderColor: 'rgba(148,163,184,0.35)', margin: '0.75rem 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Connections / Web</label>
+              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={siteBgLinksEnabled}
+                  onChange={(e) => setSiteBgLinksEnabled(e.target.checked)}
+                />
+                Enabled
+              </label>
+            </div>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Link Distance</label>
+            <input
+              type="range"
+              min="60"
+              max="200"
+              value={siteBgLinksDistance}
+              onChange={(e) => setSiteBgLinksDistance(parseInt(e.target.value, 10) || 80)}
+            />
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Link Opacity</label>
+            <input
+              type="range"
+              min="0.1"
+              max="0.8"
+              step="0.05"
+              value={siteBgLinksOpacity}
+              onChange={(e) => setSiteBgLinksOpacity(parseFloat(e.target.value) || 0.2)}
+            />
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Link Width</label>
+            <input
+              type="range"
+              min="0.5"
+              max="2"
+              step="0.1"
+              value={siteBgLinksWidth}
+              onChange={(e) => setSiteBgLinksWidth(parseFloat(e.target.value) || 0.5)}
+            />
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Link Color</label>
+            <select
+              value={siteBgLinksColorMode}
+              onChange={(e) => setSiteBgLinksColorMode(e.target.value)}
+            >
+              <option value="match">Match particles</option>
+              <option value="random">Random</option>
+            </select>
+
+                {/* Interactivity */}
+                <hr style={{ borderColor: 'rgba(148,163,184,0.35)', margin: '0.75rem 0' }} />
+            <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Interactivity</label>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>On hover</label>
+            <select
+              value={siteBgHoverMode}
+              onChange={(e) => setSiteBgHoverMode(e.target.value)}
+            >
+              <option value="none">None</option>
+              <option value="grab">Grab (lines to cursor)</option>
+              <option value="bubble">Bubble (grow near cursor)</option>
+            </select>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>On click</label>
+            <select
+              value={siteBgClickMode}
+              onChange={(e) => setSiteBgClickMode(e.target.value)}
+            >
+              <option value="none">None</option>
+              <option value="push">Push (add)</option>
+              <option value="remove">Remove</option>
+              <option value="repulse">Repulse</option>
+              <option value="bubble">Bubble</option>
+            </select>
+
+                {/* Trail / depth */}
+                <hr style={{ borderColor: 'rgba(148,163,184,0.35)', margin: '0.75rem 0' }} />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <label style={{ fontSize: '0.8rem', fontWeight: '600' }}>Trails / Glow</label>
+              <label style={{ fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <input
+                  type="checkbox"
+                  checked={siteBgTrailEnabled}
+                  onChange={(e) => setSiteBgTrailEnabled(e.target.checked)}
+                />
+                Enable
+              </label>
+            </div>
+            <label style={{ fontSize: '0.8rem', marginTop: '0.25rem' }}>Trail Length</label>
+            <input
+              type="range"
+              min="5"
+              max="20"
+              value={siteBgTrailLength}
+              onChange={(e) => setSiteBgTrailLength(parseInt(e.target.value, 10) || 5)}
+            />
+            <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Trail Opacity</label>
+            <input
+              type="range"
+              min="0.05"
+              max="0.6"
+              step="0.05"
+              value={siteBgTrailOpacity}
+              onChange={(e) => setSiteBgTrailOpacity(parseFloat(e.target.value) || 0.1)}
+            />
+                <label style={{ fontSize: '0.8rem', marginTop: '0.4rem' }}>Depth Layers (z‑layers)</label>
+                <input
+                  type="range"
+                  min="3"
+                  max="64"
+                  value={siteBgZLayers}
+                  onChange={(e) => setSiteBgZLayers(parseInt(e.target.value, 10) || 24)}
+                />
+              </div>
+            )}
           </div>
 
         </div>
