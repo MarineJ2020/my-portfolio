@@ -9,6 +9,8 @@ export function useSkills() {
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'skills'), (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort by displayOrder (ascending), defaulting to 0 for missing values
+      data.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       setSkills(data);
       setLoading(false);
     });
@@ -16,7 +18,7 @@ export function useSkills() {
   }, []);
 
   const addSkill = async (skillData) => {
-    await addDoc(collection(db, 'skills'), { ...skillData, media: [] });
+    await addDoc(collection(db, 'skills'), { ...skillData, media: [], displayOrder: skillData.displayOrder ?? 0 });
   };
 
   const updateSkill = async (id, updates) => {

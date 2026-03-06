@@ -2,6 +2,7 @@
 :root {
   --primary: #6366f1; /* Indigo */
   --primary-hover: #4f46e5;
+  --page-bg: #0f172a;
   --bg-dark: #0f172a;
   --bg-card: #1e293b;
   --text-main: #f8fafc;
@@ -10,15 +11,54 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --radius: 12px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --theme-duration: 0.4s ease;
 }
 
 body {
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   margin: 0;
   padding: 0;
-  background-color: var(--bg-dark);
+  background-color: var(--page-bg);
   color: var(--text-main);
   line-height: 1.6;
+  transition: background-color var(--theme-duration), color var(--theme-duration);
+}
+
+/* Smooth theme transitions for theme-dependent elements */
+nav, .card, .skill-card, .tab-btn, .modal-content, .btn-ghost,
+footer, .example-work-card, .example-work-card-caption, .media-grid-item,
+input, textarea, select, .admin-section {
+  transition: background-color var(--theme-duration), color var(--theme-duration), border-color var(--theme-duration);
+}
+
+nav a, footer a {
+  transition: color var(--theme-duration);
+}
+
+/* Light theme: default contrasting palette (overridden by JS when custom lightBg) */
+body.light-theme {
+  --page-bg: #f8fafc;
+  --bg-card: #ffffff;
+  --text-main: #1e293b;
+  --text-muted: #475569;
+  --glass: rgba(255, 255, 255, 0.85);
+  --glass-border: rgba(0, 0, 0, 0.1);
+}
+
+body.light-theme h1 {
+  background: linear-gradient(to right, #1e293b, #64748b);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+body.light-theme nav {
+  background: rgba(248, 250, 252, 0.9);
+  border-bottom-color: rgba(0, 0, 0, 0.08);
+}
+
+body.light-theme .skill-card:hover {
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.15);
 }
 
 /* --- Layout & Typography --- */
@@ -34,7 +74,7 @@ h1, h2, h3 {
   margin-top: 0;
 }
 
-h1 { font-size: 3rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; color: transparent; }
+h1 { font-size: 3rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; color: transparent; }
 h2 { font-size: 2rem; }
 h3 { font-size: 1.25rem; }
 
@@ -95,6 +135,13 @@ nav a:hover, nav a.active { color: var(--primary); }
   grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
   gap: 1.5rem;
   margin-top: 2rem;
+  padding-left: 15px; /* compensate for skill-card's horizontal padding */
+  padding-right: 15px;
+}
+
+/* Ensure skill cards inside the skills grid have comfortable horizontal padding */
+.skills-grid .skill-card {
+  padding: 2rem 1.5rem;
 }
 
 .skill-card {
@@ -102,7 +149,8 @@ nav a:hover, nav a.active { color: var(--primary); }
   backdrop-filter: blur(12px);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  padding: 2rem;
+  /* restore horizontal padding: vertical 2rem, horizontal 1.5rem */
+  padding: 2rem 1.5rem;
   text-align: center;
   cursor: pointer;
   transition: var(--transition);
@@ -126,6 +174,13 @@ nav a:hover, nav a.active { color: var(--primary); }
   transition: transform 0.3s ease;
 }
 .skill-card:hover::before { transform: scaleX(1); }
+
+.example-work-card-caption {
+  background: rgba(255, 255, 255, 0.05);
+}
+body.light-theme .example-work-card-caption {
+  background: rgba(0, 0, 0, 0.04);
+}
 
 /* --- Tabs --- */
 .tabs {
@@ -160,6 +215,10 @@ nav a:hover, nav a.active { color: var(--primary); }
   display: flex; align-items: center; justify-content: center;
   z-index: 1000;
   animation: fadeIn 0.2s ease-out;
+  transition: background-color var(--theme-duration);
+}
+body.light-theme .modal-overlay {
+  background: rgba(0,0,0,0.4);
 }
 
 .modal-content {
@@ -236,9 +295,17 @@ nav a:hover, nav a.active { color: var(--primary); }
 /* --- Admin Specific --- */
 .admin-layout { display: grid; gap: 2rem; }
 .admin-section { background: rgba(0,0,0,0.2); padding: 1.5rem; border-radius: var(--radius); }
+body.light-theme .admin-section { background: rgba(0,0,0,0.06); }
 input, textarea, select {
   background: var(--bg-dark); border: 1px solid var(--glass-border);
-  color: white; padding: 0.75rem; border-radius: 8px; width: 100%; margin-bottom: 10px;
+  color: var(--text-main); padding: 0.75rem; border-radius: 8px; width: 100%; margin-bottom: 10px;
   box-sizing: border-box;
+}
+body.light-theme input,
+body.light-theme textarea,
+body.light-theme select {
+  background: #fff;
+  border-color: rgba(0,0,0,0.12);
+  color: #1e293b;
 }
 input:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }

@@ -9,14 +9,16 @@ export function usePositions() {
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, 'positions'), (snapshot) => {
       const data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Sort by displayOrder (ascending), defaulting to 0 for missing values
+      data.sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
       setPositions(data);
       setLoading(false);
     });
     return unsubscribe;
   }, []);
 
-  const addPosition = async (name, headline = '') => {
-    await addDoc(collection(db, 'positions'), { name, headline: headline || '', skillIds: [] });
+  const addPosition = async (name, headline = '', displayOrder = 0) => {
+    await addDoc(collection(db, 'positions'), { name, headline: headline || '', skillIds: [], exampleWorkIds: [], displayOrder });
   };
 
   const updatePosition = async (id, updates) => {

@@ -2,170 +2,364 @@
 import { useState, useEffect } from 'react';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
-import { useSettings } from './hooks/useSettings'; // Import the settings hook
-import { getYouTubeEmbedUrl } from './utils/youtube';
+import { useExampleWork } from './hooks/useExampleWork';
+import { useSettings } from './hooks/useSettings';
 
 function MainPage() {
   const { positions } = usePositions();
   const { skills } = useSkills();
-  const { settings } = useSettings(); // Get live settings from Firestore
+  const { exampleWork } = useExampleWork();
+  const { settings } = useSettings();
 
   const [activePositionId, setActivePositionId] = useState('');
   const [selectedSkill, setSelectedSkill] = useState(null);
+  const [selectedWork, setSelectedWork] = useState(null);
 
-  // Sync active position and apply background color
+  // Theme state
+  const [theme, setTheme] = useState('dark');
+  const [manualOverride, setManualOverride] = useState(false);
+
+  // Initial position selection
   useEffect(() => {
     if (!activePositionId && positions.length > 0) {
       setActivePositionId(positions[0].id);
     }
-    
-    // Apply the background color from dashboard to the body
-    if (settings?.bgColor) {
-      document.body.style.backgroundColor = settings.bgColor;
+  }, [positions, activePositionId]);
+
+  // Auto theme (time-based)
+  useEffect(() => {
+    if (manualOverride) return;
+    const hour = new Date().getHours();
+    const isDay = hour > 6 && hour < 18;
+    setTheme(isDay ? 'light' : 'dark');
+  }, [manualOverride]);
+
+  // Apply body styles: use --page-bg for smooth transition; light theme gets auto-contrast
+  useEffect(() => {
+    document.body.className = `${theme}-theme`;
+    const bg = theme === 'light' ? settings.lightBg : settings.darkBg;
+    document.documentElement.style.setProperty('--page-bg', bg);
+
+    const target = document.body;
+    if (theme === 'light' && bg) {
+      const lum = getLuminance(bg);
+      const isLight = lum > 0.4;
+      if (isLight) {
+        target.style.setProperty('--text-main', '#1e293b');
+        target.style.setProperty('--text-muted', '#475569');
+        target.style.setProperty('--bg-card', '#ffffff');
+        target.style.setProperty('--glass', 'rgba(255,255,255,0.85)');
+        target.style.setProperty('--glass-border', 'rgba(0,0,0,0.1)');
+      } else {
+        target.style.setProperty('--text-main', '#f8fafc');
+        target.style.setProperty('--text-muted', '#94a3b8');
+        target.style.setProperty('--bg-card', '#1e293b');
+        target.style.setProperty('--glass', 'rgba(30,41,59,0.7)');
+        target.style.setProperty('--glass-border', 'rgba(255,255,255,0.1)');
+      }
+    } else {
+      target.style.removeProperty('--text-main');
+      target.style.removeProperty('--text-muted');
+      target.style.removeProperty('--bg-card');
+      target.style.removeProperty('--glass');
+      target.style.removeProperty('--glass-border');
     }
-  }, [positions, activePositionId, settings?.bgColor]);
+  }, [theme, settings]);
+
+  function getLuminance(hex) {
+    const n = hex.replace(/^#/, '');
+    const r = parseInt(n.slice(0, 2), 16) / 255;
+    const g = parseInt(n.slice(2, 4), 16) / 255;
+    const b = parseInt(n.slice(4, 6), 16) / 255;
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  const toggleTheme = () => {
+    setManualOverride(true);
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   const activePosition = positions.find(p => p.id === activePositionId);
   const activeSkills = activePosition
     ? skills.filter(s => activePosition.skillIds?.includes(s.id))
     : [];
-
-  // Fallback values if settings haven't loaded yet
-  const displayName = settings?.name || 'Your Name';
-  const footerText = settings?.footerText || `© ${new Date().getFullYear()} Portfolio`;
+  const activeExampleWork = activePosition
+    ? exampleWork.filter(w => activePosition.exampleWorkIds?.includes(w.id))
+    : [];
 
   return (
-    <div className="main-page">
-      {/* Hero Section */}
-      <section className="container" style={{ textAlign: 'center', padding: '6rem 1rem 4rem' }}>
-        <div style={{ marginBottom: '2rem' }}>
-          {settings?.profilePic ? (
-            <img 
-  // This adds "c_fill,g_face,w_300,q_auto,f_auto" to the URL
-  // It automatically finds the face, crops to 300px, and optimizes format!
-  src={settings.profilePic.replace('/upload/', '/upload/c_fill,g_face,w_300,q_auto,f_auto/')} 
-  alt={displayName} 
-  style={{ width: '120px', height: '120px', borderRadius: '50%', objectFit: 'cover' }} 
-/>
-          ) : (
-            <div style={{ 
-              width: '120px', height: '120px', borderRadius: '50%', 
-              background: 'linear-gradient(45deg, var(--primary), #ec4899)', 
-              margin: '0 auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '3rem', fontWeight: 'bold'
-            }}>
-              {displayName.charAt(0)}
-            </div>
-          )}
+    <div className="main-page" style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      
+      {/* Background Animation */}
+      {settings.animEnabled && (
+        <div className={`bg-anim anim-${theme}`}>
+          {theme === 'light'
+            ? [...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="cloud"
+                  style={{
+                    background: settings.lightAnimColor,
+                    top: `${i * 15}%`,
+                    left: `-${Math.random() * 20}%`,
+                    animationDuration: `${20 + i * 5}s`,
+                  }}
+                />
+              ))
+            : [...Array(40)].map((_, i) => (
+                <div
+                  key={i}
+                  className="star"
+                  style={{
+                    background: settings.darkAnimColor,
+                    top: `${Math.random() * 100}%`,
+                    left: `${Math.random() * 100}%`,
+                    animationDelay: `${Math.random() * 3}s`,
+                  }}
+                />
+              ))}
         </div>
-        <h1>{displayName}</h1>
-        <p style={{ color: 'var(--text-muted)', fontSize: '1.2rem', maxWidth: '600px', margin: '1rem auto' }}>
-          {activePosition?.headline || 'I build accessible, pixel-perfect, and performant web experiences. Explore my technical expertise by role below.'}
-        </p>
-      </section>
+      )}
 
-      {/* Navigation / Filtering */}
-      <section className="container">
-        <div className="tabs">
+      {/* Content Layer */}
+      <div style={{ position: 'relative', zIndex: 10 }}>
+
+        {/* Theme Toggle */}
+        <button
+          onClick={toggleTheme}
+          title="Toggle Theme"
+          style={{
+            position: 'absolute',
+            top: 20,
+            right: 20,
+            background: 'none',
+            border: 'none',
+            fontSize: '1.5rem',
+            cursor: 'pointer',
+            zIndex: 100,
+          }}
+        >
+          {theme === 'light' ? '☀️' : '🌙'}
+        </button>
+
+        {/* Header */}
+        <header className="container" style={{ textAlign: 'center', padding: '6rem 1rem 4rem' }}>
+          {settings.profilePic && (
+            <img
+              src={settings.profilePic.replace('/upload/', '/upload/c_fill,g_face,q_auto,f_auto/')}
+              alt="Profile"
+              style={{
+                width: `${settings.profileSize}px`,
+                height: `${settings.profileSize}px`,
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '3px solid var(--primary)',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+              }}
+            />
+          )}
+          <h1 style={{ fontSize: `${settings.fontSizeHead}rem` }}>{settings.name}</h1>
+          <p
+            style={{
+              fontSize: `${settings.fontSizeBody}rem`,
+              opacity: 0.8,
+              maxWidth: '700px',
+              margin: '1rem auto',
+              whiteSpace: 'pre-line',
+            }}
+          >
+            {settings.tagline}
+          </p>
+        </header>
+
+        {/* Roles Label */}
+        <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '3rem' }}>
+          <h2 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Roles that I&apos;m specialized in</h2>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Click a role to see relevant skills and projects</p>
+        </div>
+
+        {/* Position Tabs */}
+        <div className="tabs" style={{ justifyContent: 'center' }}>
           {positions.map(pos => (
             <button
               key={pos.id}
               onClick={() => setActivePositionId(pos.id)}
               className={`tab-btn ${activePositionId === pos.id ? 'active' : ''}`}
+              style={{ minWidth: `${settings.roleCardSize}px` }}
             >
               {pos.name}
             </button>
           ))}
         </div>
 
-        {/* Content Grid */}
-        <div className="skills-grid">
-          {activeSkills.length > 0 ? (
-            activeSkills.map(skill => (
-              <div
-                key={skill.id}
-                onClick={() => setSelectedSkill(skill)}
-                className="skill-card"
-              >
-                <h3>{skill.name}</h3>
-                <p style={{ fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                  {skill.description ? skill.description.substring(0, 60) + '...' : 'View details'}
+        {/* Skills Label */}
+        {activeSkills.length > 0 && (
+          <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '2rem' }}>
+            <h2 style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>Skills for this role</h2>
+          </div>
+        )}
+
+        {/* Skills Grid */}
+        <div
+          className="skills-grid"
+          style={{
+            gridTemplateColumns: `repeat(auto-fit, minmax(${settings.skillCardSize}px, 1fr))`,
+          }}
+        >
+          {activeSkills.map(skill => (
+            <div
+              key={skill.id}
+              className="skill-card"
+              onClick={() => setSelectedSkill(skill)}
+            >
+              <h3>{skill.name}</h3>
+              {skill.description && (
+                <p style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+                  {skill.description.substring(0, 50)}…
                 </p>
-                <div style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.6 }}>
-                    Click to view media
-                </div>
-              </div>
-            ))
-          ) : (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', color: 'var(--text-muted)' }}>
-              <p>No skills listed for this position yet.</p>
+              )}
             </div>
-          )}
+          ))}
         </div>
-      </section>
 
-      {/* Detail Modal */}
-      {selectedSkill && (
-        <div className="modal-overlay" onClick={() => setSelectedSkill(null)}>
-          <div className="modal-content" onClick={e => e.stopPropagation()}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <h2 style={{ margin: 0, color: 'var(--primary)' }}>{selectedSkill.name}</h2>
-              <button 
+        {/* Skill Modal */}
+        {selectedSkill && (
+          <div className="modal-overlay" onClick={() => setSelectedSkill(null)}>
+            <div className="modal-content" onClick={e => e.stopPropagation()}>
+              <h2>{selectedSkill.name}</h2>
+              <p>{selectedSkill.description}</p>
+
+              <div className="media-grid">
+                {selectedSkill.media?.map((m, i) => (
+                  <div key={i}>
+                    {m.type === 'image' ? (
+                      <img src={m.url} alt="" />
+                    ) : (
+                      <video src={m.url} controls muted />
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <button
+                className="btn btn-primary"
+                style={{ marginTop: 20 }}
                 onClick={() => setSelectedSkill(null)}
-                style={{ background: 'none', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}
               >
-                &times;
-              </button>
-            </div>
-            
-            <p style={{ fontSize: '1.1rem', color: 'var(--text-muted)', lineHeight: '1.8' }}>
-              {selectedSkill.description || 'No description provided.'}
-            </p>
-
-            {selectedSkill.media && selectedSkill.media.length > 0 && (
-              <>
-                <h4 style={{ marginTop: '2rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '0.5rem' }}>Gallery</h4>
-                <div className="media-grid">
-                  {selectedSkill.media.map((m, idx) => (
-                    <div key={idx} className="media-grid-item">
-                      {m.type === 'image' ? (
-                        <img src={m.url} alt={`${selectedSkill.name} demo ${idx}`} loading="lazy" />
-                      ) : getYouTubeEmbedUrl(m.url) ? (
-                        <iframe
-                          src={getYouTubeEmbedUrl(m.url)}
-                          title={`${selectedSkill.name} video ${idx}`}
-                          frameBorder="0"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
-                      ) : (
-                        <video src={m.url} controls muted />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </>
-            )}
-            
-            <div style={{ marginTop: '2rem', textAlign: 'right' }}>
-              <button className="btn btn-primary" onClick={() => setSelectedSkill(null)}>
-                Close Details
+                Close
               </button>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Footer Section */}
-      <footer style={{ 
-        marginTop: '6rem', 
-        padding: '3rem 1rem', 
-        textAlign: 'center', 
-        borderTop: '1px solid var(--glass-border)',
-        color: 'var(--text-muted)'
-      }}>
-        <p>{footerText}</p>
-      </footer>
+        {/* Example Work Label & Grid */}
+        {activeExampleWork.length > 0 && (
+          <>
+            <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '3rem' }}>
+              <h2 style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>Example Work</h2>
+            </div>
+            <div
+              className="example-work-grid"
+              style={{
+                display: 'grid',
+                /* keep cards slightly smaller and consistent */
+                gridTemplateColumns: `repeat(auto-fit, minmax(160px, 220px))`,
+                justifyContent: 'center',
+                gap: '15px',
+                marginBottom: '3rem',
+              }}
+            >
+              {activeExampleWork.map(work => (
+                <div
+                  key={work.id}
+                  className="example-work-card"
+                  onClick={() => setSelectedWork(work)}
+                  style={{
+                    cursor: 'pointer',
+                    borderRadius: '8px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--glass-border)',
+                    transition: 'transform 0.2s',
+                    maxWidth: '220px',
+                    margin: '0 auto'
+                  }}
+                >
+                  {work.thumbnail && (
+                    <div style={{ width: '100%', aspectRatio: '16/9', overflow: 'hidden', background: 'rgba(0,0,0,0.04)' }}>
+                      <img
+                        src={work.thumbnail}
+                        alt={work.title}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                    </div>
+                  )}
+                  <div className="example-work-card-caption" style={{ padding: '10px' }}>
+                    <p style={{ margin: '0', fontSize: '0.9rem', fontWeight: '600' }}>{work.title}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+
+        {/* Example Work Modal */}
+        {selectedWork && (
+          <div className="modal-overlay" onClick={() => setSelectedWork(null)} style={{ zIndex: 1000 }}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+              {selectedWork.thumbnail && (
+                <img src={selectedWork.thumbnail} alt={selectedWork.title} style={{ width: '100%', maxHeight: '300px', objectFit: 'cover', borderRadius: '8px 8px 0 0' }} />
+              )}
+              
+              <div style={{ padding: '2rem' }}>
+                <h2>{selectedWork.title}</h2>
+                <p style={{ color: 'var(--text-muted)' }}>{selectedWork.description}</p>
+
+                {selectedWork.url && (
+                  <a href={selectedWork.url} target="_blank" rel="noreferrer" className="btn btn-primary" style={{ display: 'inline-block', marginTop: '1rem', marginBottom: '1rem' }}>
+                    Check it out →
+                  </a>
+                )}
+
+                <button
+                  className="btn btn-primary"
+                  style={{ marginTop: 20, display: 'block', width: '100%' }}
+                  onClick={() => setSelectedWork(null)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Footer */}
+        <footer
+          style={{
+            marginTop: '5rem',
+            padding: '2rem',
+            textAlign: 'center',
+            borderTop: '1px solid var(--glass-border)',
+          }}
+        >
+          <div style={{ marginBottom: '1rem' }}>
+            {settings.footerLinks?.map((link, i) => (
+              <a
+                key={i}
+                href={link.url}
+                target="_blank"
+                rel="noreferrer"
+                className="footer-link"
+                style={{ margin: '0 8px', color: 'var(--text-muted)' }}
+              >
+                {link.text || link.label}
+              </a>
+            ))}
+          </div>
+          <small style={{ opacity: 0.6 }}>
+            © {new Date().getFullYear()} {settings.name}
+          </small>
+        </footer>
+      </div>
     </div>
   );
 }
