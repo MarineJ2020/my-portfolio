@@ -1,5 +1,5 @@
 /* eslint-disable react/react-in-jsx-scope */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { usePositions } from './hooks/usePositions';
 import { useSkills } from './hooks/useSkills';
 import { useExampleWork } from './hooks/useExampleWork';
@@ -15,6 +15,84 @@ function MainPage() {
   const [activePositionId, setActivePositionId] = useState('');
   const [selectedSkill, setSelectedSkill] = useState(null);
   const [selectedWork, setSelectedWork] = useState(null);
+
+  const heroPhotoRef = useRef(null);
+  const heroTextRef = useRef(null);
+
+  // Scroll-reveal animations on main content sections
+  useEffect(() => {
+    const els = Array.from(document.querySelectorAll('.reveal'));
+    if (!els.length) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          entry.target.classList.toggle('visible', entry.isIntersecting);
+        });
+      },
+      { threshold: 0.12, rootMargin: '0px 0px -20% 0px' }
+    );
+
+    els.forEach((el) => observer.observe(el));
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [positions, skills, exampleWork, activePositionId]);
+
+  // Scroll-driven hero/viewport transforms
+  useEffect(() => {
+    const heroPhoto = heroPhotoRef.current;
+    const heroText = heroTextRef.current;
+    const particleBg = document.querySelector('.particle-bg');
+
+    let ticking = false;
+
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const easeOut = (t) => 1 - Math.pow(1 - t, 3);
+
+    const updateTransforms = () => {
+      const scrollY = window.scrollY || window.pageYOffset || 0;
+      const t = clamp(scrollY / 280, 0, 1);
+      const e = easeOut(t);
+
+      if (heroPhoto) {
+        const scale = 1.3 - 0.3 * e;
+        const tx = -40 * (1 - e);
+        const rot = -12 * (1 - e);
+        heroPhoto.style.transform = `translateX(${tx}px) rotate(${rot}deg) scale(${scale})`;
+      }
+
+      if (heroText) {
+        const scale = 1.12 - 0.12 * e;
+        const tx = 40 * (1 - e);
+        const rot = 3 * (1 - e);
+        heroText.style.transform = `translateX(${tx}px) rotate(${rot}deg) scale(${scale})`;
+      }
+
+      if (particleBg) {
+        const bgScale = 1.12 - 0.12 * e;
+        particleBg.style.transform = `scale(${bgScale})`;
+      }
+
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(updateTransforms);
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+
+    // Initial update
+    updateTransforms();
+
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+    };
+  }, []);
 
   // Theme state
   const [theme, setTheme] = useState('dark');
@@ -98,7 +176,7 @@ function MainPage() {
     : [];
 
   return (
-    <div className="main-page" style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+    <div className="main-page" style={{ position: 'relative', minHeight: '100vh' }}>
       
       {/* Background Animation (canvas particles) */}
       {settings.animEnabled && (
@@ -131,43 +209,55 @@ function MainPage() {
         </button>
 
         {/* Header */}
-        <header className="container" style={{ textAlign: 'center', padding: '6rem 1rem 4rem' }}>
-          {settings.profilePic && (
-            <img
-              src={settings.profilePic.replace('/upload/', '/upload/c_fill,g_face,q_auto,f_auto/')}
-              alt="Profile"
-              style={{
-                width: `${settings.profileSize}px`,
-                height: `${settings.profileSize}px`,
-                borderRadius: '50%',
-                objectFit: 'cover',
-                border: '3px solid var(--primary)',
-                boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
-              }}
-            />
-          )}
-          <h1 style={{ fontSize: `${settings.fontSizeHead}rem` }}>{settings.name}</h1>
-          <p
-            style={{
-              fontSize: `${settings.fontSizeBody}rem`,
-              opacity: 0.8,
-              maxWidth: '700px',
-              margin: '1rem auto',
-              whiteSpace: 'pre-line',
-            }}
-          >
-            {settings.tagline}
-          </p>
+        <header className="container reveal hero" style={{ padding: '6rem 1rem 4rem' }}>
+          <div className="hero-inner">
+            {settings.profilePic && (
+              <div className="hero-photo" ref={heroPhotoRef}>
+                <img
+                  src={settings.profilePic.replace('/upload/', '/upload/c_fill,g_face,q_auto,f_auto/')}
+                  alt="Profile"
+                  style={{
+                    width: `${settings.profileSize}px`,
+                    height: `${settings.profileSize}px`,
+                    borderRadius: '50%',
+                    objectFit: 'cover',
+                    border: '3px solid var(--primary)',
+                    boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  }}
+                />
+              </div>
+            )}
+
+            <div className="hero-text" ref={heroTextRef}>
+              <h1 style={{ fontSize: `${settings.fontSizeHead}rem` }}>{settings.name}</h1>
+              <p
+                style={{
+                  fontSize: `${settings.fontSizeBody}rem`,
+                  opacity: 0.8,
+                  maxWidth: '700px',
+                  margin: '1rem auto',
+                  whiteSpace: 'pre-line',
+                }}
+              >
+                {settings.tagline}
+              </p>
+            </div>
+          </div>
+
+          <div className="scroll-prompt" aria-hidden="true">
+            <span>Scroll down to learn more</span>
+            <span className="scroll-arrow">↓</span>
+          </div>
         </header>
 
         {/* Roles Label */}
-        <div style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '3rem' }}>
+        <div className="reveal" style={{ textAlign: 'center', marginBottom: '2rem', marginTop: '3rem' }}>
           <h2 style={{ color: 'var(--primary)', marginBottom: '0.5rem' }}>Roles that I&apos;m specialized in</h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>Click a role to see relevant skills and projects</p>
         </div>
 
         {/* Position Tabs */}
-        <div className="tabs" style={{ justifyContent: 'center' }}>
+        <div className="tabs reveal" style={{ justifyContent: 'center' }}>
           {positions.map(pos => (
             <button
               key={pos.id}
@@ -189,7 +279,7 @@ function MainPage() {
 
         {/* Skills Grid */}
         <div
-          className="skills-grid"
+          className="skills-grid reveal"
           style={{
             gridTemplateColumns: `repeat(auto-fit, minmax(${settings.skillCardSize}px, 1fr))`,
           }}
@@ -250,11 +340,11 @@ function MainPage() {
         {/* Example Work Label & Grid */}
         {activeExampleWork.length > 0 && (
           <>
-            <div style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '3rem' }}>
+            <div className="reveal" style={{ textAlign: 'center', marginBottom: '1.5rem', marginTop: '3rem' }}>
               <h2 style={{ color: 'var(--primary)', fontSize: '1.2rem' }}>Example Work</h2>
             </div>
             <div
-              className="example-work-grid"
+              className="example-work-grid reveal"
               style={{
                 display: 'grid',
                 /* keep cards slightly smaller and consistent */

@@ -76,6 +76,7 @@ body.light-theme .skill-card:hover {
   height: 100vh;
   z-index: 0;
   pointer-events: none;
+  transform-origin: center center;
 }
 
 /* --- Layout & Typography --- */
@@ -325,6 +326,78 @@ body.light-theme .orbit-dot {
 /* --- Animations --- */
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* Scroll reveal helper */
+.reveal {
+  opacity: 0;
+  transform: translateY(30px) scale(0.98) rotate(-2deg);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0) scale(1) rotate(0);
+}
+
+/* Hero + scroll prompt */
+.hero {
+  min-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding-top: 5rem;
+  padding-bottom: 4rem;
+  text-align: center;
+  position: relative;
+}
+
+.hero-inner {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.5rem;
+  flex-wrap: wrap;
+}
+
+.hero-photo {
+  will-change: transform;
+  transition: transform 0.45s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-text {
+  will-change: transform;
+  transition: transform 0.45s ease;
+  max-width: 680px;
+}
+
+.scroll-prompt {
+  margin-top: 2.5rem;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.9rem;
+  opacity: 0.7;
+  animation: float 2.4s ease-in-out infinite;
+}
+
+.scroll-arrow {
+  font-size: 1.4rem;
+  display: inline-block;
+  animation: bounce 1.2s infinite;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(6px); }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(8px); }
+}
 
 /* --- Admin: hovering delete on media thumbnails --- */
 .media-thumb-wrap {
