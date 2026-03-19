@@ -12,6 +12,14 @@ export function useSettings() {
     tagline: '',
     roleCardSize: 160,
     skillCardSize: 220,
+    // Location + contact
+    mapQuery: 'New York, NY',
+    contactEmail: '',
+    contactPhone: '',
+    contactWhatsApp: '',
+    // optional background graphic overlay
+    siteGraphicUrl: '',
+    siteGraphicOpacity: 0.15,
     // separate background colors for day/night
     lightBg: '#f8fafc',
     darkBg: '#0f172a',
@@ -46,6 +54,16 @@ export function useSettings() {
     bgZLayers: 24,
     // footer links (array of { text, url })
     footerLinks: [],
+    // layout configuration (order / visibility / animation)
+    layout: [
+      { id: 'hero', label: 'Hero', enabled: true, animation: 'fade' },
+      { id: 'roles', label: 'Roles', enabled: true, animation: 'slide' },
+      { id: 'skills', label: 'Skills', enabled: true, animation: 'zoom' },
+      { id: 'work', label: 'Example Work', enabled: true, animation: 'fade' },
+      { id: 'map', label: 'Where am I staying', enabled: true, animation: 'slide' },
+      { id: 'contact', label: 'Contact', enabled: true, animation: 'fade' },
+      { id: 'footer', label: 'Footer', enabled: true, animation: 'fade' },
+    ],
   });
 
   useEffect(() => {

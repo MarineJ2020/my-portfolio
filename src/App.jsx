@@ -16,8 +16,8 @@ function App() {
   return (
     <div className="app">
       <nav>
-        <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'white' }}>
-          <Link to="/" style={{ color: 'white', textDecoration: 'none', marginLeft: 0 }}>Portfolio</Link>
+        <div className="nav-brand">
+          <Link to="/">Portfolio</Link>
         </div>
         <div>
           <Link to="/">Home</Link>

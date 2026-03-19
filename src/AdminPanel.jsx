@@ -67,6 +67,12 @@ function AdminPanel() {
   const [siteName, setSiteName] = useState('');
   const [siteLightBg, setSiteLightBg] = useState('#f8fafc');
   const [siteDarkBg, setSiteDarkBg] = useState('#0f172a');
+  const [siteMapQuery, setSiteMapQuery] = useState('New York, NY');
+  const [siteContactEmail, setSiteContactEmail] = useState('');
+  const [siteContactPhone, setSiteContactPhone] = useState('');
+  const [siteContactWhatsApp, setSiteContactWhatsApp] = useState('');
+  const [siteGraphicUrl, setSiteGraphicUrl] = useState('');
+  const [siteGraphicOpacity, setSiteGraphicOpacity] = useState(0.15);
   const [footerLinksLocal, setFooterLinksLocal] = useState([]);
   const [showFooterModal, setShowFooterModal] = useState(false);
 
@@ -99,6 +105,29 @@ function AdminPanel() {
   const [siteBgZLayers, setSiteBgZLayers] = useState(24);
   const [showBgDrawer, setShowBgDrawer] = useState(false);
 
+  // Layout customization (order + animations)
+  const [siteLayoutConfig, setSiteLayoutConfig] = useState([]);
+  const [draggingLayoutIndex, setDraggingLayoutIndex] = useState(null);
+
+  const defaultLayout = [
+    { id: 'hero', label: 'Hero', enabled: true, animation: 'fade' },
+    { id: 'roles', label: 'Roles', enabled: true, animation: 'slide' },
+    { id: 'skills', label: 'Skills', enabled: true, animation: 'zoom' },
+    { id: 'work', label: 'Example Work', enabled: true, animation: 'fade' },
+    { id: 'map', label: 'Where am I staying', enabled: true, animation: 'slide' },
+    { id: 'contact', label: 'Contact', enabled: true, animation: 'fade' },
+    { id: 'footer', label: 'Footer', enabled: true, animation: 'fade' },
+  ];
+
+  const mergeLayout = (current) => {
+    const seen = new Map((current || []).map((item) => [item.id, item]));
+    const merged = defaultLayout.map((def) => ({ ...def, ...seen.get(def.id) }));
+    (current || []).forEach((item) => {
+      if (!merged.find((m) => m.id === item.id)) merged.push(item);
+    });
+    return merged;
+  };
+
   // Sync local state when settings load from Firebase
   useEffect(() => {
     if (settings) {
@@ -111,6 +140,14 @@ function AdminPanel() {
       setSiteName(settings.name || '');
       setSiteLightBg(settings.lightBg || '#f8fafc');
       setSiteDarkBg(settings.darkBg || '#0f172a');
+      setSiteMapQuery(settings.mapQuery || 'New York, NY');
+      setSiteContactEmail(settings.contactEmail || '');
+      setSiteContactPhone(settings.contactPhone || '');
+      setSiteContactWhatsApp(settings.contactWhatsApp || '');
+      setSiteGraphicUrl(settings.siteGraphicUrl || '');
+      setSiteGraphicOpacity(
+        typeof settings.siteGraphicOpacity === 'number' ? settings.siteGraphicOpacity : 0.15
+      );
       setFooterLinksLocal(settings.footerLinks || []);
 
       setSiteAnimEnabled(settings.animEnabled ?? true);
@@ -161,13 +198,61 @@ function AdminPanel() {
       setSiteBgZLayers(
         typeof settings.bgZLayers === 'number' ? settings.bgZLayers : 24
       );
+
+      setSiteLayoutConfig(
+        mergeLayout(
+          Array.isArray(settings.layout)
+            ? settings.layout.map((item) => ({
+                id: item.id,
+                label: item.label || item.id,
+                enabled: item.enabled ?? true,
+                animation: item.animation || 'fade',
+              }))
+            : []
+        )
+      );
     }
   }, [settings]);
+
+  const setLayoutItem = (index, partial) => {
+    setSiteLayoutConfig((prev) => {
+      const next = [...prev];
+      next[index] = { ...next[index], ...partial };
+      return next;
+    });
+  };
+
+  const onLayoutDragStart = (index) => (event) => {
+    setDraggingLayoutIndex(index);
+    event.dataTransfer.effectAllowed = 'move';
+  };
+
+  const onLayoutDragOver = (index) => (event) => {
+    event.preventDefault();
+    if (draggingLayoutIndex === null || draggingLayoutIndex === index) return;
+    setSiteLayoutConfig((prev) => {
+      const next = [...prev];
+      const [moved] = next.splice(draggingLayoutIndex, 1);
+      next.splice(index, 0, moved);
+      return next;
+    });
+    setDraggingLayoutIndex(index);
+  };
+
+  const onLayoutDragEnd = () => {
+    setDraggingLayoutIndex(null);
+  };
 
   // --- Handlers ---
   const handleSaveGlobalSettings = async () => {
     await updateSettings({
       name: siteName,
+      mapQuery: siteMapQuery,
+      contactEmail: siteContactEmail,
+      contactPhone: siteContactPhone,
+      contactWhatsApp: siteContactWhatsApp,
+      siteGraphicUrl: siteGraphicUrl,
+      siteGraphicOpacity: siteGraphicOpacity,
       lightBg: siteLightBg,
       darkBg: siteDarkBg,
       footerLinks: footerLinksLocal,
@@ -197,6 +282,7 @@ function AdminPanel() {
       bgTrailLength: siteBgTrailLength,
       bgTrailOpacity: siteBgTrailOpacity,
       bgZLayers: siteBgZLayers,
+      layout: siteLayoutConfig,
     });
     alert("Site configuration saved!");
   };
@@ -219,6 +305,29 @@ const handleProfilePicUpload = async (e) => {
     // data.secure_url is the permanent link
     await updateSettings({ profilePic: data.secure_url });
     alert("Profile picture updated via Cloudinary!");
+  } catch (err) {
+    console.error("Upload failed", err);
+  }
+};
+
+const handleSiteGraphicUpload = async (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', 'portfolio_uploads');
+
+  try {
+    const response = await fetch(
+      `https://api.cloudinary.com/v1_1/j-portfolio/image/upload`,
+      { method: 'POST', body: formData }
+    );
+    const data = await response.json();
+
+    await updateSettings({ siteGraphicUrl: data.secure_url });
+    setSiteGraphicUrl(data.secure_url);
+    alert("Background graphic updated via Cloudinary!");
   } catch (err) {
     console.error("Upload failed", err);
   }
@@ -451,6 +560,114 @@ const handleProfilePicUpload = async (e) => {
             <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
               <input type="color" value={siteDarkBg} onChange={(e) => setSiteDarkBg(e.target.value)} style={{ width: '50px', height: '40px', padding: '0' }} />
               <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{siteDarkBg}</span>
+            </div>
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>Map Location</label>
+            <input
+              value={siteMapQuery}
+              onChange={(e) => setSiteMapQuery(e.target.value)}
+              placeholder="e.g. New York, NY"
+            />
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>Contact Email</label>
+            <input
+              value={siteContactEmail}
+              onChange={(e) => setSiteContactEmail(e.target.value)}
+              placeholder="you@example.com"
+            />
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>Contact Phone</label>
+            <input
+              value={siteContactPhone}
+              onChange={(e) => setSiteContactPhone(e.target.value)}
+              placeholder="+1 555 123 4567"
+            />
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>WhatsApp Number</label>
+            <input
+              value={siteContactWhatsApp}
+              onChange={(e) => setSiteContactWhatsApp(e.target.value)}
+              placeholder="+1 555 123 4567"
+            />
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>Site Graphic / Overlay</label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleSiteGraphicUpload}
+              style={{ fontSize: '0.8rem' }}
+            />
+            <input
+              type="text"
+              value={siteGraphicUrl}
+              onChange={(e) => setSiteGraphicUrl(e.target.value)}
+              placeholder="Enter image URL"
+            />
+
+            <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.5rem' }}>Graphic Opacity</label>
+            <input
+              type="range"
+              min="0"
+              max="0.6"
+              step="0.01"
+              value={siteGraphicOpacity}
+              onChange={(e) => setSiteGraphicOpacity(parseFloat(e.target.value) || 0)}
+            />
+            <small style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+              {Math.round(siteGraphicOpacity * 100)}% opacity (lower = subtler)
+            </small>
+
+            {/* Layout / Section order */}
+            <div style={{ marginTop: '1rem' }}>
+              <label style={{ fontSize: '0.85rem', fontWeight: '600' }}>Page Layout</label>
+              <div style={{
+                marginTop: '0.5rem',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '10px',
+                padding: '0.75rem',
+                background: 'rgba(15,23,42,0.25)',
+              }}>
+                {siteLayoutConfig.map((item, idx) => (
+                  <div
+                    key={item.id}
+                    draggable
+                    onDragStart={onLayoutDragStart(idx)}
+                    onDragOver={onLayoutDragOver(idx)}
+                    onDragEnd={onLayoutDragEnd}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem',
+                      padding: '0.5rem 0.5rem',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(148,163,184,0.3)',
+                      background: draggingLayoutIndex === idx ? 'rgba(99,102,241,0.2)' : 'transparent',
+                      cursor: 'grab',
+                      marginBottom: '0.4rem',
+                    }}
+                  >
+                    <span style={{ cursor: 'grab', fontSize: '1.1rem', opacity: 0.8 }}>☰</span>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', flex: 1 }}>
+                      <input
+                        type="checkbox"
+                        checked={item.enabled}
+                        onChange={(e) => setLayoutItem(idx, { enabled: e.target.checked })}
+                      />
+                      <span style={{ fontSize: '0.9rem' }}>{item.label}</span>
+                    </label>
+                    <select
+                      value={item.animation}
+                      onChange={(e) => setLayoutItem(idx, { animation: e.target.value })}
+                      style={{ fontSize: '0.75rem', padding: '4px 6px' }}
+                    >
+                      <option value="fade">Fade</option>
+                      <option value="slide">Slide</option>
+                      <option value="zoom">Zoom</option>
+                      <option value="pop">Pop</option>
+                    </select>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
 

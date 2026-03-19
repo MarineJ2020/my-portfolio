@@ -1,4 +1,12 @@
 /* src/index.css */
+html, body {
+  overflow-x: hidden;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
 :root {
   --primary: #6366f1; /* Indigo */
   --primary-hover: #4f46e5;
@@ -12,6 +20,7 @@
   --radius: 12px;
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   --theme-duration: 0.4s ease;
+  --icon-filter: invert(1) brightness(1.2);
 
   /* Parallax dotted background tuning */
   --dots-size: 1.5px;
@@ -43,6 +52,13 @@ nav a, footer a {
   transition: color var(--theme-duration);
 }
 
+nav > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
 /* Light theme: default contrasting palette (overridden by JS when custom lightBg) */
 body.light-theme {
   --bg-card: #ffffff;
@@ -50,8 +66,12 @@ body.light-theme {
   --text-muted: #475569;
   --glass: rgba(255, 255, 255, 0.85);
   --glass-border: rgba(0, 0, 0, 0.1);
+  --icon-filter: invert(0) brightness(1);
 }
-
+.main-footer {
+  background: var(--bg-card);
+  border-top: 1px solid var(--glass-border);
+}
 body.light-theme h1 {
   background: linear-gradient(to right, #1e293b, #64748b);
   -webkit-background-clip: text;
@@ -72,8 +92,8 @@ body.light-theme .skill-card:hover {
 .particle-bg {
   position: fixed;
   inset: 0;
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
   z-index: 0;
   pointer-events: none;
   transform-origin: center center;
@@ -92,7 +112,7 @@ h1, h2, h3 {
   margin-top: 0;
 }
 
-h1 { font-size: 3rem; background: linear-gradient(to right, #fff, #94a3b8); -webkit-background-clip: text; background-clip: text; color: transparent; }
+h1 { font-size: 3rem; background: linear-gradient(to right, var(--primary), var(--text-main)); -webkit-background-clip: text; background-clip: text; color: transparent; }
 h2 { font-size: 2rem; }
 h3 { font-size: 1.25rem; }
 
@@ -129,13 +149,27 @@ nav {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem 2rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  width: 100%;
+  box-sizing: border-box;
   backdrop-filter: blur(10px);
   background: rgba(15, 23, 42, 0.8);
   position: sticky;
   top: 0;
   z-index: 100;
   border-bottom: 1px solid var(--glass-border);
+}
+
+.nav-brand {
+  font-weight: 700;
+  font-size: 1.4rem;
+}
+
+.nav-brand a {
+  text-decoration: none;
+  color: var(--text-main);
 }
 
 nav a {
@@ -330,8 +364,19 @@ body.light-theme .orbit-dot {
 /* Scroll reveal helper */
 .reveal {
   opacity: 0;
-  transform: translateY(30px) scale(0.98) rotate(-2deg);
   transition: opacity 0.6s ease, transform 0.6s ease;
+}
+.reveal.anim-fade {
+  transform: scale(0.98);
+}
+.reveal.anim-slide {
+  transform: translateY(26px) scale(0.98);
+}
+.reveal.anim-zoom {
+  transform: scale(0.84);
+}
+.reveal.anim-pop {
+  transform: scale(0.75) rotate(-4deg);
 }
 .reveal.visible {
   opacity: 1;
@@ -448,3 +493,94 @@ body.light-theme select {
   color: #1e293b;
 }
 input:focus, textarea:focus { outline: 2px solid var(--primary); border-color: transparent; }
+
+/* Animated heading letters */
+.letter-animate span {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(12px) scale(0.98);
+  animation: none;
+}
+.reveal.visible .letter-animate span {
+  animation: letterPop 0.45s ease-out forwards;
+  animation-delay: var(--letter-delay);
+}
+
+@keyframes letterPop {
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Background overlay graphic */
+.site-graphic {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  mix-blend-mode: overlay;
+  filter: saturate(0.75) blur(1px);
+}
+
+/* Contact cards */
+.contact-card {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1.2rem 1.2rem;
+  border-radius: 14px;
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
+  text-decoration: none;
+  color: var(--text-main);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+}
+.contact-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--primary);
+  box-shadow: 0 14px 30px -10px rgba(0,0,0,0.6);
+}
+.contact-card strong {
+  font-size: 0.95rem;
+}
+.contact-card span {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.contact-icon {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  filter: var(--icon-filter, invert(1) brightness(1.2));
+}
+
+@media (max-width: 640px) {
+  .container {
+    padding: 1.25rem;
+  }
+
+  nav {
+    padding: 0.75rem 1rem;
+  }
+
+  .hero {
+    padding-top: 4rem;
+    padding-bottom: 3rem;
+  }
+
+  .hero-inner {
+    gap: 1.5rem;
+  }
+
+  .tabs {
+    gap: 0.5rem;
+  }
+
+  .skill-card {
+    padding: 1.5rem 1rem;
+  }
+}
