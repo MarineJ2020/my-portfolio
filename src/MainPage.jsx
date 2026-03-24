@@ -553,7 +553,7 @@ function MainPage() {
           title="Toggle Theme"
           style={{
             position: 'fixed',
-            top: 18,
+            top: 80,
             right: 18,
             background: 'var(--primary)',
             border: 'none',

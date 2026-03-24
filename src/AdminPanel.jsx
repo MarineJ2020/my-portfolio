@@ -591,12 +591,42 @@ const handleSiteGraphicUpload = async (e) => {
             />
 
             <label style={{ fontSize: '0.85rem', fontWeight: '600', marginTop: '0.75rem' }}>Site Graphic / Overlay</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleSiteGraphicUpload}
-              style={{ fontSize: '0.8rem' }}
-            />
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleSiteGraphicUpload}
+                style={{ fontSize: '0.8rem', flex: 1 }}
+              />
+              {siteGraphicUrl && (
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      await updateSettings({ siteGraphicUrl: '' });
+                      setSiteGraphicUrl('');
+                      alert('Site graphic removed');
+                    } catch (err) {
+                      console.error('Failed to clear site graphic', err);
+                    }
+                  }}
+                  style={{
+                    background: '#ef4444',
+                    color: 'white',
+                    border: 'none',
+                    width: '30px',
+                    height: '30px',
+                    borderRadius: '50%',
+                    cursor: 'pointer',
+                    fontWeight: '700',
+                    lineHeight: '1',
+                  }}
+                  title="Remove site graphic"
+                >
+                  ×
+                </button>
+              )}
+            </div>
             <input
               type="text"
               value={siteGraphicUrl}
